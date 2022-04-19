@@ -1,7 +1,7 @@
-# CMake Project Template on Linux 
+# CMake Project Template on Windows
 
-![avatar](https://badgen.net/badge/Language/C++11/orange)
-![stars](https://badgen.net/badge/Dev%20Env./Linux/green)
+![avatar](https://badgen.net/badge/Language/C11/orange)
+![stars](https://badgen.net/badge/Dev%20Env./Windows/green)
 ![license](https://badgen.net/badge/License/Apache-2.0/blue)
 
 ## ONE - Directory ##
@@ -9,7 +9,7 @@
 .
 ├── bin                 //Execurable Files
 ├── build               //Temporary Files
-├── auto.sh             //Auto-Compile Script
+├── auto.bat             //Auto-Compile Script
 ├── include             //Header Files
 │   ├── main.h
 │   └── module1
@@ -17,30 +17,33 @@
 ├── CMakeLists.txt      //CMake Configuration File
 ├── README.md
 └── src                 //Source Files
-    ├── main.cpp        
+    ├── main.c        
     └── module1
-        └── test1.cpp
+        └── test1.c
 ```
+## * NOTICE 
+- Personal CMake Configuration Required
+- VSCode With CMake-Tools Recommended
 
 ## TWO - Command ##
 * i . Compile Project .
     
     ```
-        $ ./auto.sh 
+        $ ./auto.bat 
     ```
-    The script will clean files at **`build`** , revise **`auto.sh`** to change.
+    Revise **`auto.sh`** for personal change.
 
 
 * ii . Run Project .
     ```
         $ cd bin
-        $ ./${PROJECT_NAME}
+        $ ${PROJECT_NAME}
     ```
 
 ## THREE - Module ##
 * i . Add source files at **`/src`** .
 * ii . Add included header files at **`/include`** .
 * iii . Cite header file **`main.h`** , add this on your files
-    ```c++
+    ```c
         #include <$(MODULE_NAME)/main.h>
     ```

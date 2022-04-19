@@ -1,11 +1,10 @@
-
+% auto make on windows %
 mkdir build
 cd build
 cmake ..
 make
 
-%echo "Removing cache files..."%
-%rm -rf *%
+% auto run with debug-level-2 %
 cd ..
 cd bin
 dnsrelay -d2
