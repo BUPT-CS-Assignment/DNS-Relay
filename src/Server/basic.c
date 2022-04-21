@@ -2,6 +2,8 @@
 #include <console.h>
 #include <server.h>
 
+
+
 void Start(Server *server){
     /* basic server data */
     char buff[BUFFER_SIZE] = {0};
@@ -18,12 +20,10 @@ void Start(Server *server){
             Packet *p = PacketParse(buff, buf_len);
             if(p != NULL){
                 PacketCheck(p);
-                if(strcmp(p->QUESTS[0].QNAME, "aaa.com") != 0){
-                    p->QUESTS[0].QTYPE = 28;
-                }
+                UrlQuery(p,RECORDS,R_NUM);
                 int len = 0;
-                char *urls[2] = {"220.177.198.124","222.222.222.222"};
-                char *buf = ResponseFormat(&len, p, urls);
+                char *buf = ResponseFormat(&len, p);
+                //Re-Parse
                 Packet *temp = PacketParse(buf, len);
                 PacketCheck(temp);
                 sendto(server->socket, buf, len, 0, &from, from_len);
@@ -65,7 +65,6 @@ int ServerInit(Server *server){
     setsockopt(server->socket, SOL_SOCKET, SO_REUSEADDR, &temp, sizeof(temp));
 
     /* bind port */
-
     if(bind(server->socket, (struct sockaddr *)&server->sock_addr, sizeof(server->sock_addr)) < 0){
         return ConsoleLog(ERROR, DEBUG_L0, "> Exit : Port Bind Error");
     }

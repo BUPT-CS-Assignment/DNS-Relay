@@ -5,6 +5,15 @@
 
 #define DEFAULT_LOCAL_DNS_ADDR  "10.3.9.45" 
 
+/* Static Records */
+static char* RECORDS[][2]={
+    {"bing.com","204.79.197.200"},
+    {"bing.com","13.107.21.200"},
+    {"bupt.edu.cn","10.3.9.161"},
+    {"noui.cloud","101.43.201.20"},
+};
+static int R_NUM = 4;   //Records Num
+
 /* MAX BUFFER SIZE */
 #define BUFFER_SIZE     1024
 
@@ -35,71 +44,91 @@
 #define SET_RD(FLAG)            FLAG |= 0x100
 #define SET_RA(FLAG)            FLAG |= 0x80
 #define SET_RCODE(FLAG,CODE)    FLAG = (FLAG & 0xfff0) | CODE
-/* Reset FLAGS */
 
+/* Reset FLAGS */
 #define RESET_QR(FLAG)      FLAG &= !0x8000
 #define RESET_AA(FLAG)      FLAG &= !0x400
 #define RESET_RD(FLAG)      FLAG &= !0x100
 #define RESET_RA(FLAG)      FLAG &= !0x80
 
 /* Get FLAGS */
-#define GET_QR(FLAG)        ({((FLAG & 0x8000)>>15);})
-#define GET_RD(FLAG)        ({((FLAG & 0x100)>>8);})
-#define GET_RA(FLAG)        ({((FLAG & 0x80)>>7);})
+#define GET_QR(FLAG)        ({((FLAG & 0x8000) >> 15);})
+#define GET_RD(FLAG)        ({((FLAG & 0x100) >> 8);})
+#define GET_RA(FLAG)        ({((FLAG & 0x80) >> 7);})
 #define GET_RCODE(FLAG)     ({(FLAG & 0x000f);})
 #define GET_QNAME_PTR(NAME) ({NAME & 0x3fff;})
 
+
 /* DNS Server Struct */
 typedef struct Server{
-    SOCKET socket;
-    struct sockaddr_in sock_addr;
-    struct sockaddr_in local_dns;
+    SOCKET  socket;
+    struct  sockaddr_in sock_addr;
+    struct  sockaddr_in local_dns;
+    char    local_dns_addr[17];
+
 }Server;
 
 /* Question Section Struct */
 typedef struct Quest{
-    char *QNAME;
-    uint16_t QTYPE,QCLASS;
+    char      *QNAME;
+    uint16_t  QTYPE;
+    uint16_t  QCLASS;
+
 }Quest;
 
 /* Answer Section Struct */
 typedef struct Answer{
-    uint16_t NAME,TYPE,CLASS,RDLEN;
-    uint32_t TTL;
-    char *RDATA;
+    uint16_t  NAME;
+    uint16_t  TYPE;
+    uint16_t  CLASS;
+    uint16_t  RDLEN;
+    uint32_t  TTL;
+    char      *RDATA;
+
 }Answer;
 
 /* Packet form */
 typedef struct Packet{
     /* Origin Infomation */
-    char *req_buf;
-    int buf_len;
+    char     *req_buf;
+    int       buf_len;
     /* Header Section */
-    uint16_t ID, FLAGS, QDCOUNT, ANCOUNT;
+    uint16_t  ID;
+    uint16_t  FLAGS;
+    uint16_t  QDCOUNT;
+    uint16_t  ANCOUNT;
     /* Question Section */
-    Quest *QUESTS;
+    Quest     *QUESTS;
     /* Answer Section */
-    Answer *ANS;
+    Answer    *ANS;
+
 }Packet;
 
+
 /* Server Base */
-void Start(Server *);
-int ServerInit(Server *);
-void RecvHandle(char *, int, struct sockaddr);
-void PacketFree(Packet *);
+void    Start(Server *);
+int     ServerInit(Server *);
+void    RecvHandle(char *buf, int len, struct sockaddr);
+
+/* Address Query */
+//int   AddrReadin();
+int     UrlQuery(Packet*, char ***records, int num);
+int     QnameSearch(char *src, int *res,char ***records, int num);
+
 
 /* Packet Handle */
-Packet *PacketParse(char *buf, int len);
-char *ResponseFormat(int *, Packet *, char **urls);
-int UrlQuery(Packet*, char **urls);
+Packet  *PacketParse(char *buf, int len);
+char    *ResponseFormat(int *len, Packet *);
+void    PacketFree(Packet *);
 
 /* Url Resolve */
-int UrlFormat(char *src, void *dest, int mode);
-int UrlParse(void *src, char *dest, int mode);
+int     UrlFormat(char *src, void *dest, int mode);
+int     UrlParse(void *src, char *dest, int mode);
 
 
 /* Packet Check */
-void PacketCheck(Packet *packet);
-void BuffCheck(char *, int);
+void    PacketCheck(Packet *);
+void    BuffCheck(char *buf, int len);
+
 
 #endif

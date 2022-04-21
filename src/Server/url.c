@@ -1,6 +1,13 @@
 #include <server.h>
 
-/* url parse */
+/**
+ * @brief Url Parse
+ * 
+ * @param void* src 
+ * @param char* dest 
+ * @param int mode 
+ * @return int 
+ */
 int UrlParse(void *src, char *dest, int mode){
     if(dest == NULL) return 0;
 
@@ -12,26 +19,31 @@ int UrlParse(void *src, char *dest, int mode){
             int len = ((char *)src)[pos];
 
             /* read chars */
-            len = (len > 64 ? 64 : len);
+            len = (len > 64 ? 64 : len);  //max length 64 bytes
             for(int i = 0; i < len; i++){
                 dest[pos + i] = ((char *)src)[pos + i + 1];
             }
-            dest[pos + len] = '.';   //add '.'
-            pos += (len + 1);   //pointer move
+            dest[pos + len] = '.';  //add '.'
+            pos += (len + 1);       //pointer move
         }
         dest[pos - 1] = '\0';
     }
     /* IPv4 parse */
     else if(mode == TYPE_A){
-        dest[3] = dest[7] = dest[11] = '.'; dest[15] = '\0';
+        
         char *temp = (char *)malloc(4);
-
+        char *pos = dest;
+        int len = 0;
         /* uint32_t to char* */
         for(int i = 0; i < 4; i++){
             itoa(*(uint8_t *)src, temp, 10);
-            memcpy(dest + i * 4, temp, 3);
+            int len = strlen(temp);
+            strcpy(pos, temp);
+            *(pos+len)='.';
             src++;
+            pos+=(len+1);
         }
+        *(pos-1) = '\0';
         /* memory free */
         free(temp);
 
@@ -40,10 +52,17 @@ int UrlParse(void *src, char *dest, int mode){
         return 0;
     }
     return 1;
-
 }
 
-/* url format */
+
+/**
+ * @brief Format Url to Chars 
+ * 
+ * @param char* url 
+ * @param void* dest 
+ * @param int mode 
+ * @return int 
+ */
 int UrlFormat(char *url, void *dest, int mode){
     if(dest == NULL) return 0;
     /* IPv4 format */
@@ -58,8 +77,9 @@ int UrlFormat(char *url, void *dest, int mode){
         return 1;
     }
     else{
-        return NULL;
+        return 0;
     }
-
 }
+
+
 
