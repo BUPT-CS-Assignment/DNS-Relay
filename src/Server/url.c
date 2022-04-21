@@ -20,8 +20,6 @@ int UrlParse(void *src, char *dest, int mode){
             pos += (len + 1);   //pointer move
         }
         dest[pos - 1] = '\0';
-
-
     }
     /* IPv4 parse */
     else if(mode == TYPE_A){
@@ -50,7 +48,6 @@ int UrlFormat(char *url, void *dest, int mode){
     if(dest == NULL) return 0;
     /* IPv4 format */
     if(mode == TYPE_A){
-        printf("url : %s\n", url);
         char temp[strlen(url) + 1];
         strcpy(temp, url);
         char *ptr = strtok(temp, ".");
