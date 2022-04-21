@@ -1,113 +1,119 @@
 #include <server.h>
 #include <console.h>
 
-Packet *RequestParse(char *buf, int len){
-    Packet *packet = (Packet *)malloc(sizeof(Packet) + 1);
-    memset(packet, 0, sizeof(Packet));
+Packet *PacketParse(char *buf, int len){
+
+    Packet *dest = (Packet *)malloc(sizeof(Packet));
+    memset(dest, 0, sizeof(Packet));
+
     /* set req_buf */
-    packet->req_buf = buf;
-    packet->buf_len = len;
+    dest->req_buf = buf;
+    dest->buf_len = len;
 
     /* set Header */
-    memcpy(&packet->ID, buf, sizeof(uint16_t));
-    memcpy(&packet->FLAGS, buf + 2, sizeof(uint16_t));
-    packet->QDCOUNT = ntohs(*((uint16_t *)(buf + 4)));
-    //packet->ANCOUNT = ntohs(*((uint16_t *)(buf + 6)));
-    /* Set Question Number */
-    char *pos = buf + 12;
-    packet->QUESTS = (Quest *)malloc(sizeof(Quest) * packet->QDCOUNT);
+    memcpy(&dest->ID, buf, sizeof(uint16_t));
+    dest->FLAGS = ntohs(*((uint16_t *)(buf + 2)));
+    dest->QDCOUNT = ntohs(*((uint16_t *)(buf + 4)));
+    dest->ANCOUNT = ntohs(*(uint16_t *)(buf + 6));
+
+    char *buf_pos = buf + 12;
+
     /* Get Questions */
-    for(int i = 0; i < packet->QDCOUNT; i++){
+    dest->QUESTS = (Quest *)malloc(sizeof(Quest) * dest->QDCOUNT);
+    for(int i = 0; i < dest->QDCOUNT; i++){
+
         /* read till '\0' */
-        int q_len = strlen(pos);
+        int q_len = strlen(buf_pos);
+
         /* QNAME　parse */
-        packet->QUESTS[i].QNAME = UrlParse(pos);
+        dest->QUESTS[i].QNAME = (char *)malloc(260);
+        UrlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
+
         /* QTYPE parse */
-        pos += (q_len + 1);
-        packet->QUESTS[i].QTYPE = ntohs(*((uint16_t *)pos));
-        pos += 4;
+        buf_pos += (q_len + 1);
+        dest->QUESTS[i].QTYPE = ntohs(*((uint16_t *)buf_pos));
+        buf_pos += 4;
     }
-    return packet;
-}
 
-char *UrlParse(char *buf){
-    char *res = (char *)malloc(strlen(buf) + 1);
-    int pos = 0;
-    while(buf[pos] != '\0'){
-        /* length byte */
-        int len = buf[pos];
-        /* read chars */
-        len = (len > 64 ? 64 : len);
-        for(int i = 0; i < len; i++){
-            res[pos + i] = buf[pos + i + 1];
-        }
-        res[pos + len] = '.';   //add '.'
-        pos += (len + 1);   //pointer move
+    if(dest->ANCOUNT == 0)    return dest;
+
+    /* Get Answers */
+    dest->ANS = (Answer *)malloc(sizeof(Answer) * dest->ANCOUNT);
+    for(int i = 0; i < dest->ANCOUNT; i++){
+
     }
-    res[pos - 1] = '\0';
-    return res;
+    return dest;
 }
 
 
-char *ResponseFormat(Packet packet, int *len, char **url){
-    /* Header Section */
-    //char header[12];
-    //memset(header, 0, 12);
-    //memcpy(header, &packet.ID, sizeof(uint16_t));
+
+
+char *ResponseFormat(int *len, Packet *src, char **url){
 
     /* Set Flags */
-    uint16_t flag = packet.FLAGS | 0x8180; //QR = 1, RD = 1, AA = 1
-    flag = (packet.QUESTS[0].QTYPE==1? htons(0x8580) : htons(0x8583));
-    //memcpy(header + 2, &packet.FLAGS, sizeof(uint16_t));
-    uint16_t qdcount = packet.QDCOUNT;
-    /* Set QDCOUNT, ANCOUNT */
-    //memcpy(header + 4, &qdcount, sizeof(uint16_t));
-    //memcpy(header + 6, &qdcount, sizeof(uint16_t));
-
-    /* Question Section */
+    uint16_t flag = src->FLAGS;
+    SET_QR(flag);
+    SET_RD(flag);
+    if(src->QUESTS[0].QTYPE != TYPE_A){
+        SET_RCODE(flag, RCODE_NOT_IMPLEMENTED);
+    }
+    flag = ntohs(flag);
+    uint16_t qdcount = src->QDCOUNT;
 
     /* Answer Section */
     uint16_t names[qdcount + 1];
-    names[0] = htons(0xc00c);  //Pos = 1100000000001100 
-    for(int i = 1; i < packet.QDCOUNT; i++){
-        names[i] = names[i - 1] + strlen(packet.QUESTS->QNAME) + 5;
+    names[0] = 0xc00c;  //Pos = 1100000000001100 
+    for(int i = 1; i < src->QDCOUNT; i++){
+        names[i] = names[i - 1] + strlen(src->QUESTS->QNAME) + 5;
     }
+    for(int i = 0; i < src->QDCOUNT; i++){
+        names[i] = htons(names[i]);
+    }
+
     /* Resource Data */
     uint32_t resData[qdcount + 1];
-    for(int i = 0; i < packet.QDCOUNT; i++){
-        resData[i] = htonl(UrlFormat(url[i]));
+    for(int i = 0; i < src->QDCOUNT; i++){
+        resData[i] = 0;
+        UrlFormat(url[i], &resData[i], TYPE_A);
+        resData[i] = htonl(resData[i]);
     }
-    *len = packet.buf_len + qdcount * 16;
-    char *res = (char *)malloc(*len + 1);
-    memcpy(res, packet.req_buf, packet.buf_len);
-    memcpy(res + 2, &flag, sizeof(uint16_t));   //set new flag
+
+    /* memory allocated */
+    /* ------------------------IMPROVE-REQUIRED------------------------*/
+    *len = src->buf_len + qdcount * 16;
+    char *dest = (char *)malloc(*len + 1);
+
+    /* set basic dest info */
+    memcpy(dest, src->req_buf, src->buf_len);
+    memcpy(dest + 2, &flag, sizeof(uint16_t));
     uint16_t ancount = htons(qdcount);
-    memcpy(res + 6, &ancount, sizeof(uint16_t));    //set ancount
+    memcpy(dest + 6, &ancount, sizeof(uint16_t));    //set ancount
+
+    /* set data section */
     for(int i = 0; i < qdcount; i++){
-        char *dataPos = res + (packet.buf_len + (i * 16));
-        int flags = htons(0x01), time = htonl(0x80), dataLen = htons(0x04);
+        char *dataPos = dest + (src->buf_len + (i * 16));
+        int flags = htons(TYPE_A), time = htonl(0x80), dataLen = SIZE_TYPE_A;
+        /* set NAME poiner */
         memcpy(dataPos, &names[i], sizeof(uint16_t));
+        /* set TYPE */
         memcpy((dataPos + 2), &flags, sizeof(uint16_t));
+        /* set CLASS */
         memcpy((dataPos + 4), &flags, sizeof(uint16_t));
+        /* set TTL */
         memcpy((dataPos + 6), &time, sizeof(uint32_t));
+        /* set RDATA */
+        memcpy((dataPos + 12), &resData[i], dataLen);
+        /* set RDATA Length */
+        dataLen = htons(dataLen);
         memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));
-        memcpy((dataPos + 12), &resData[i], sizeof(uint32_t));
+        
+        
     }
-    return res;
+    return dest;
 
 }
 
-uint32_t UrlFormat(char *url){
-    uint32_t res = 0;
-    char temp[strlen(url) + 1];
-    strcpy(temp, url);
-    char *ptr = strtok(temp, ".");
-    for(int i = 0; i < 4; i++){
-        res |= (atoi(ptr) << ((3 - i) * 8));
-        ptr = strtok(NULL, ".");
-    }
-    return res;
-}
+
 /*
 char *UrlFormat(char *url){
     char *res = (char *)malloc(strlen(url) + 1);
@@ -125,6 +131,8 @@ char *UrlFormat(char *url){
     return res;
 }
 */
+
+/* packet check */
 void PacketCheck(Packet *packet){
     printf("--------Packet-Check--------\n");
     if(packet == NULL){

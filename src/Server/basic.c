@@ -15,7 +15,7 @@ void Start(Server* server){
         /* packet received */
         if(buf_len > 0){
             /* packet handle */
-            Packet *p = RequestParse(buff,buf_len);
+            Packet *p = PacketParse(buff,buf_len);
             if(p!=NULL){
                 PacketCheck(p);
                 if(strcmp(p->QUESTS[0].QNAME,"aaa.com")!=0){
@@ -23,7 +23,7 @@ void Start(Server* server){
                 }
                 int len = 0;
                 char* urls[2] = {"220.177.198.124","222.222.222.222"};
-                char* buf = ResponseFormat(*p,&len,urls);
+                char* buf = ResponseFormat(&len,p,urls);
                 BuffCheck(buf,len);
                 sendto(server->socket,buf,len,0,&from,from_len);
                 PacketFree(p);
@@ -39,13 +39,13 @@ void Start(Server* server){
 int ServerInit(Server* server){
     /* struct pointer judge */
     if(server == NULL){
-        return ConsoleLog(ERROR,DEBUG_L0, "<E> Pointer Error");
+        return ConsoleLog(ERROR,DEBUG_L0, "> Exit : Pointer Error");
     }
 
     /* server socket create */
     server->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if(server->socket < 0){
-        return ConsoleLog(ERROR,DEBUG_L0, "<E> Socket Create Failed");
+        return ConsoleLog(ERROR,DEBUG_L0, "> Exit : Socket Error");
     }
 
     /* server init */
@@ -59,14 +59,15 @@ int ServerInit(Server* server){
     server->local_dns.sin_port = htons(53);
 
     /* reuser addr enable*/
-    int temp = 0;
-    setsockopt(server->socket,SOL_SOCKET,SO_REUSEADDR,(const char*)&temp,sizeof(temp));
+    int temp = 1;
+    setsockopt(server->socket,SOL_SOCKET,SO_REUSEADDR,&temp,sizeof(temp));
 
     /* bind port */
+
     if(bind(server->socket,(struct sockaddr*)&server->sock_addr, sizeof(server->sock_addr)) <0){
-        return ConsoleLog(ERROR,DEBUG_L0,"<E> Port Bind Error");
+        return ConsoleLog(ERROR,DEBUG_L0,"> Exit : Port Bind Error");
     }
-    return ConsoleLog(SUCCESS,DEBUG_L0,"<C> Server Create Success");
+    return ConsoleLog(SUCCESS,DEBUG_L0,"> Server Create Success");
 }
 
 

@@ -17,5 +17,6 @@ int main(int argc,char* argv[]){
     if(!ServerInit(&DNS)) return -1;
     Start(&DNS);
     
+    system("pause");
     return 0;
 }
