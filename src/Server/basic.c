@@ -2,7 +2,7 @@
 #include <console.h>
 #include <server.h>
 
-
+struct sockaddr pre_from;
 
 void Start(Server *server){
     /* basic server data */
@@ -16,19 +16,42 @@ void Start(Server *server){
         buf_len = recvfrom(server->socket, buff, BUFFER_SIZE, 0, &from, &from_len);
         /* packet received */
         if(buf_len > 0){
+            uint16_t flag = ntohs(*(uint16_t *)(buff + 2));
+            printf("> QR %d\n", GET_QR(flag));
+
+            /* Simple Relay Query */
+            if(GET_QR(flag) == 1){
+                ConsoleLog(0, DEBUG_L0, "> sendto client");
+                sendto(server->socket, buff, buf_len, 0, &pre_from, from_len);
+                memset(buff, 0, BUFFER_SIZE);
+                continue;
+            }
+            else{
+                memcpy(&pre_from, &from, sizeof(from));
+            }
+
             /* packet handle */
             Packet *p = PacketParse(buff, buf_len);
             if(p != NULL){
                 PacketCheck(p);
-                UrlQuery(p,RECORDS,R_NUM);
+                if(UrlQuery(p, RECORDS, R_NUM) == 0){
+
+                    /* Simple Relay Query */
+                    ConsoleLog(0, DEBUG_L0, "> sendto server");
+                    sendto(server->socket, buff, buf_len, 0, &server->local_dns, from_len);
+                    memset(buff, 0, BUFFER_SIZE);
+                    continue;
+                }
+
                 int len = 0;
                 char *buf = ResponseFormat(&len, p);
                 //Re-Parse
-                Packet *temp = PacketParse(buf, len);
-                PacketCheck(temp);
+                //Packet *temp = PacketParse(buf, len);
+                //PacketCheck(temp);
                 sendto(server->socket, buf, len, 0, &from, from_len);
+                ConsoleLog(0, DEBUG_L0, "> send from dnsrelay");
                 PacketFree(p);
-                PacketFree(temp);
+                //PacketFree(temp);
             }
             /* buff flush */
             memset(buff, 0, BUFFER_SIZE);

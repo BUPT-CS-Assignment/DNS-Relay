@@ -318,6 +318,7 @@ void BuffCheck(char *buf, int len){
     }
     printf(" - Packet Length= %d\n   [Packet] ", len);
     for(int i = 0; i < len; i++){
+        /* Format Output */
         printf("%02X ", (unsigned char)buf[i]);
         if(i == len - 1){
             printf("\n");

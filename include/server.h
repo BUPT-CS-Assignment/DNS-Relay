@@ -3,7 +3,7 @@
 
 #include <main.h>
 
-#define DEFAULT_LOCAL_DNS_ADDR  "10.3.9.45" 
+#define DEFAULT_LOCAL_DNS_ADDR  "10.3.9.44" 
 
 /* Static Records */
 static char* RECORDS[][2]={
@@ -11,8 +11,9 @@ static char* RECORDS[][2]={
     {"bing.com","13.107.21.200"},
     {"bupt.edu.cn","10.3.9.161"},
     {"noui.cloud","101.43.201.20"},
+    {"unique.com","220.177.198.124"}
 };
-static int R_NUM = 4;   //Records Num
+static int R_NUM = 5;   //Records Num
 
 /* MAX BUFFER SIZE */
 #define BUFFER_SIZE     1024
