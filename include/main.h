@@ -8,7 +8,6 @@
 #include <time.h>
 #include <pthread.h>
 
-
-
+extern int __DEBUG__;
 
 #endif

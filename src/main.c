@@ -3,20 +3,23 @@
 #include <server.h>
 #pragma comment(lib,"Ws2_32.lib")
 
+int __DEBUG__ = 0;
+
 int main(int argc,char* argv[]){
 
-    /* lib enable */
     WSADATA w;
     WSAStartup(MAKEWORD(2,2),&w);
 
     /* arg parse */
-    ConsoleParse(argc,argv);
+    consoleParse(argc,argv);
     
     /* server run */
-    Server DNS;
-    if(!ServerInit(&DNS)) return -1;
-    Start(&DNS);
+    Socket DNS;
+    socketInit(&DNS,SERVER_ADDR,53);
+
+    start(&DNS);
     
+    WSACleanup();
     system("pause");
     return 0;
 }

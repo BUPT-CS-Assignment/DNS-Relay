@@ -1,9 +1,8 @@
 #include <main.h>
 #include <console.h>
+#include <stdarg.h>
 
-int __DEBUG__ = 0;
-
-void ConsoleParse(int argc, char* argv[]){
+void consoleParse(int argc, char* argv[]){
     if(argc > 1 && argv[1][0] == '-'){
         if(argv[1][1] == 'd'){
             __DEBUG__ = 1;
@@ -14,9 +13,18 @@ void ConsoleParse(int argc, char* argv[]){
     }
 }
 
-int ConsoleLog(int return_val,int debug_val,const char* msg){
-    if(debug_val <= __DEBUG__){
-        printf("%s\n",msg);
-    }
-    return return_val;
+
+void consoleLog(int debug_level,const char* fmt,...){
+    /* DEBUG level check */
+    if(debug_level > __DEBUG__) return;
+
+    /* (printf) var_arg */ 
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+
+    /* color reset */
+    printf(RESET);
 }
+

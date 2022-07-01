@@ -8,7 +8,7 @@
  * @param int mode 
  * @return int 
  */
-int UrlParse(void *src, char *dest, int mode){
+int urlParse(void *src, char *dest, int mode){
     if(dest == NULL) return 0;
 
     /* QNAME parse */
@@ -63,7 +63,7 @@ int UrlParse(void *src, char *dest, int mode){
  * @param int mode 
  * @return int 
  */
-int UrlFormat(char *url, void *dest, int mode){
+int urlFormat(char *url, void *dest, int mode){
     if(dest == NULL) return 0;
     /* IPv4 format */
     if(mode == TYPE_A){

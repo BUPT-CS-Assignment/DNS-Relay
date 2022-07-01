@@ -3,7 +3,8 @@
 
 #include <main.h>
 
-#define DEFAULT_LOCAL_DNS_ADDR  "10.3.9.44" 
+#define SERVER_ADDR             INADDR_ANY
+#define LOCAL_DNS_ADDR          inet_addr("114.114.114.114")
 
 /* Static Records */
 static char* RECORDS[][2]={
@@ -15,21 +16,24 @@ static char* RECORDS[][2]={
 };
 static int R_NUM = 5;   //Records Num
 
+/* MAX CONNECT NUM */
+#define MAX_CONNECT             128
+
 /* MAX BUFFER SIZE */
-#define BUFFER_SIZE     1024
+#define BUFFER_SIZE             1024
 
 /* TYPE CODE*/
-#define TYPE_QNAME      -1
-#define TYPE_A          1
-#define TYPE_NA         2
-#define TYPE_CNAME      5
-#define TYPE_MX         15
-#define TYPE_TXT        16
-#define TYPE_AAAA       28
+#define TYPE_QNAME              -1
+#define TYPE_A                  1
+#define TYPE_NA                 2
+#define TYPE_CNAME              5
+#define TYPE_MX                 15
+#define TYPE_TXT                16
+#define TYPE_AAAA               28
 
 /* TYPE SIZE */
-#define SIZE_TYPE_A     4
-#define SIZE_TYPE_AAAA  16
+#define SIZE_TYPE_A             4
+#define SIZE_TYPE_AAAA          16
 
 /* RCODE */
 #define RCODE_NO_ERROR          0x0
@@ -47,27 +51,23 @@ static int R_NUM = 5;   //Records Num
 #define SET_RCODE(FLAG,CODE)    FLAG = (FLAG & 0xfff0) | CODE
 
 /* Reset FLAGS */
-#define RESET_QR(FLAG)      FLAG &= !0x8000
-#define RESET_AA(FLAG)      FLAG &= !0x400
-#define RESET_RD(FLAG)      FLAG &= !0x100
-#define RESET_RA(FLAG)      FLAG &= !0x80
+#define RESET_QR(FLAG)          FLAG &= !0x8000
+#define RESET_AA(FLAG)          FLAG &= !0x400
+#define RESET_RD(FLAG)          FLAG &= !0x100
+#define RESET_RA(FLAG)          FLAG &= !0x80
 
 /* Get FLAGS */
-#define GET_QR(FLAG)        ({((FLAG & 0x8000) >> 15);})
-#define GET_RD(FLAG)        ({((FLAG & 0x100) >> 8);})
-#define GET_RA(FLAG)        ({((FLAG & 0x80) >> 7);})
-#define GET_RCODE(FLAG)     ({(FLAG & 0x000f);})
-#define GET_QNAME_PTR(NAME) ({NAME & 0x3fff;})
+#define GET_QR(FLAG)            ({((FLAG & 0x8000) >> 15);})
+#define GET_RD(FLAG)            ({((FLAG & 0x100) >> 8);})
+#define GET_RA(FLAG)            ({((FLAG & 0x80) >> 7);})
+#define GET_RCODE(FLAG)         ({(FLAG & 0x000f);})
+#define GET_QNAME_PTR(NAME)     ({NAME & 0x3fff;})
 
-
-/* DNS Server Struct */
-typedef struct Server{
-    SOCKET  socket;
-    struct  sockaddr_in sock_addr;
-    struct  sockaddr_in local_dns;
-    char    local_dns_addr[17];
-
-}Server;
+/* Socket Struct */
+typedef struct Socket{
+    SOCKET _fd;
+    struct sockaddr_in _addr;
+}Socket;
 
 /* Question Section Struct */
 typedef struct Quest{
@@ -106,30 +106,36 @@ typedef struct Packet{
 }Packet;
 
 
+/* Socket Base */
+int     socketInit(Socket* server,uint32_t address ,uint16_t port);
+void    socketClose(Socket*);
+void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
+
 /* Server Base */
-void    Start(Server *);
-int     ServerInit(Server *);
-void    RecvHandle(char *buf, int len, struct sockaddr);
+void*   connectHandle(void* param);
+void    start(Socket *);
+
+/* 
 
 /* Address Query */
 //int   AddrReadin();
-int     UrlQuery(Packet*, char ***records, int num);
-int     QnameSearch(char *src, int *res,char ***records, int num);
+int     urlQuery(Packet*, char ***records, int num);
+int     qnameSearch(char *src, int *res,char ***records, int num);
 
 
 /* Packet Handle */
-Packet  *PacketParse(char *buf, int len);
-char    *ResponseFormat(int *len, Packet *);
-void    PacketFree(Packet *);
+Packet  *packetParse(char *buf, int len);
+char    *responseFormat(int *len, Packet *);
+void    packetFree(Packet *);
 
 /* Url Resolve */
-int     UrlFormat(char *src, void *dest, int mode);
-int     UrlParse(void *src, char *dest, int mode);
+int     urlFormat(char *src, void *dest, int mode);
+int     urlParse(void *src, char *dest, int mode);
 
 
 /* Packet Check */
-void    PacketCheck(Packet *);
-void    BuffCheck(char *buf, int len);
+void    packetCheck(Packet *);
+void    bufferCheck(char *buf, int len);
 
 
 #endif

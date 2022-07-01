@@ -30,7 +30,7 @@
   * @param int len
   * @return Packet* packet
   */
-Packet *PacketParse(char *buf, int len){
+Packet *packetParse(char *buf, int len){
 
     Packet *dest = (Packet *)malloc(sizeof(Packet));
     memset(dest, 0, sizeof(Packet));
@@ -82,7 +82,7 @@ Packet *PacketParse(char *buf, int len){
 
         /* QNAME　parse */
         dest->QUESTS[i].QNAME = (char *)malloc(260);
-        UrlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
+        urlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
 
         /* QTYPE parse */
         buf_pos += (q_len + 1);
@@ -123,7 +123,7 @@ Packet *PacketParse(char *buf, int len){
         /* Set Resource Info*/
         dest->ANS[i].RDLEN = ntohs(*(uint16_t *)(buf_pos + 10));
         dest->ANS[i].RDATA = (char *)malloc(17);
-        UrlParse(buf_pos + 12, dest->ANS[i].RDATA, TYPE_A);
+        urlParse(buf_pos + 12, dest->ANS[i].RDATA, TYPE_A);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
     return dest;
@@ -138,7 +138,7 @@ Packet *PacketParse(char *buf, int len){
  * @param char** url
  * @return char* buff
  */
-char *ResponseFormat(int *len, Packet *src){
+char *responseFormat(int *len, Packet *src){
 
     /* Set Flags
     +--+-----------+--+--+--+--+--------+-----------+
@@ -179,7 +179,7 @@ char *ResponseFormat(int *len, Packet *src){
     uint32_t resData[src->ANCOUNT];
     for(int i = 0; i < src->ANCOUNT; i++){
         resData[i] = 0;
-        UrlFormat(src->ANS[i].RDATA, &resData[i], src->ANS[i].TYPE);
+        urlFormat(src->ANS[i].RDATA, &resData[i], src->ANS[i].TYPE);
         resData[i] = htonl(resData[i]);
     }
 
@@ -242,13 +242,13 @@ char *ResponseFormat(int *len, Packet *src){
  *
  * @param Packet* src
  */
-void PacketCheck(Packet *src){
+void packetCheck(Packet *src){
     printf("> Packet Check\n");
     if(src == NULL){
         printf("<null-ptr>\n");
     }
     /* Origin Buffer Check */
-    BuffCheck(src->req_buf, src->buf_len);
+    bufferCheck(src->req_buf, src->buf_len);
 
     /* Check Header */
     printf(" - ID= %d\n", src->ID);
@@ -282,7 +282,7 @@ void PacketCheck(Packet *src){
  *
  * @param Packet* src
  */
-void PacketFree(Packet *src){
+void packetFree(Packet *src){
     /* Free Question Section */
     if(src->QUESTS != NULL){
         for(int i = 0; i < src->QDCOUNT; i++){
@@ -311,7 +311,7 @@ void PacketFree(Packet *src){
  * @param char* buf
  * @param int len
  */
-void BuffCheck(char *buf, int len){
+void bufferCheck(char *buf, int len){
     if(buf == NULL || len <= 0){
         printf("<none buff>\n");
         return;

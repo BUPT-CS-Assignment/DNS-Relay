@@ -1,97 +1,149 @@
 #include <main.h>
+#include <map.h>
 #include <console.h>
 #include <server.h>
 
-struct sockaddr pre_from;
+typedef struct pthread_args
+{
+    char buf[BUFFER_SIZE];
+    Socket* server;
+    Socket connect;
+    int buf_len;
+}pthread_args;
 
-void Start(Server *server){
-    /* basic server data */
-    char buff[BUFFER_SIZE] = {0};
-    int buf_len = 0;
-    struct sockaddr from;
-    int from_len = sizeof(server->sock_addr);
-    /* server run */
-    while(1){
-        /* listening */
-        buf_len = recvfrom(server->socket, buff, BUFFER_SIZE, 0, &from, &from_len);
-        /* packet received */
-        if(buf_len > 0){
-            uint16_t flag = ntohs(*(uint16_t *)(buff + 2));
-            printf("> QR %d\n", GET_QR(flag));
-
-            /* Simple Relay Query */
-            if(GET_QR(flag) == 1){
-                ConsoleLog(0, DEBUG_L0, "> sendto client");
-                sendto(server->socket, buff, buf_len, 0, &pre_from, from_len);
-                memset(buff, 0, BUFFER_SIZE);
-                continue;
-            }
-            else{
-                memcpy(&pre_from, &from, sizeof(from));
-            }
-
-            /* packet handle */
-            Packet *p = PacketParse(buff, buf_len);
-            if(p != NULL){
-                PacketCheck(p);
-                if(UrlQuery(p, RECORDS, R_NUM) == 0){
-
-                    /* Simple Relay Query */
-                    ConsoleLog(0, DEBUG_L0, "> sendto server");
-                    sendto(server->socket, buff, buf_len, 0, &server->local_dns, from_len);
-                    memset(buff, 0, BUFFER_SIZE);
-                    continue;
-                }
-
-                int len = 0;
-                char *buf = ResponseFormat(&len, p);
-                //Re-Parse
-                //Packet *temp = PacketParse(buf, len);
-                //PacketCheck(temp);
-                sendto(server->socket, buf, len, 0, &from, from_len);
-                ConsoleLog(0, DEBUG_L0, "> send from dnsrelay");
-                PacketFree(p);
-                //PacketFree(temp);
-            }
-            /* buff flush */
-            memset(buff, 0, BUFFER_SIZE);
-        }
+void start(Socket* server)
+{
+    if(server == NULL)
+    {
+        consoleLog(DEBUG_L0, "> no server created\n");
+        exit(-1);
     }
-}
-
-
-
-int ServerInit(Server *server){
-    /* struct pointer judge */
-    if(server == NULL){
-        return ConsoleLog(ERROR, DEBUG_L0, "> Exit : Pointer Error");
-    }
-
-    /* server socket create */
-    server->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if(server->socket < 0){
-        return ConsoleLog(ERROR, DEBUG_L0, "> Exit : Socket Error");
-    }
-
-    /* server init */
-    server->sock_addr.sin_family = AF_INET;
-    server->sock_addr.sin_addr.s_addr = INADDR_ANY;
-    server->sock_addr.sin_port = htons(53);
-
-    /* local dns server link */
-    server->local_dns.sin_family = AF_INET;
-    server->local_dns.sin_addr.s_addr = inet_addr(DEFAULT_LOCAL_DNS_ADDR);
-    server->local_dns.sin_port = htons(53);
-
-    /* reuser addr enable*/
-    int temp = 1;
-    setsockopt(server->socket, SOL_SOCKET, SO_REUSEADDR, &temp, sizeof(temp));
 
     /* bind port */
-    if(bind(server->socket, (struct sockaddr *)&server->sock_addr, sizeof(server->sock_addr)) < 0){
-        return ConsoleLog(ERROR, DEBUG_L0, "> Exit : Port Bind Error");
+    if(bind(server->_fd, (SOCKADDR*)&server->_addr, sizeof(server->_addr)) < 0)
+    {
+        consoleLog(DEBUG_L0, RED"> bind port %d failed\n", ntohs(server->_addr.sin_port));
+        exit(-1);
     }
-    return ConsoleLog(SUCCESS, DEBUG_L0, "> Server Create Success");
+
+    consoleLog(DEBUG_L0, "> server start\n");
+
+    pthread_t pt;
+    int fromlen = sizeof(struct sockaddr_in);
+    for(;;)
+    {
+        /* wait for new connection */
+        pthread_args* pta = malloc(sizeof(pthread_args));
+        pta->server = server;
+        pta->buf_len = recvfrom(server->_fd, &pta->buf, BUFFER_SIZE, 0, (SOCKADDR*)&pta->connect._addr, &fromlen);
+        
+        if(pta->buf_len > 0)
+        {
+            /* new thread create */
+            pthread_create(&pt, NULL, connectHandle, (void*)pta);
+        }
+        else
+        {
+            free(pta);
+        }
+    }
+
+    /* close server */
+    socketClose(server);
+    
 }
 
+void* connectHandle(void* param)
+{
+
+    /* thread params parse */
+    pthread_args* pta = (pthread_args*)param;
+
+    Socket* server = pta->server;
+    Socket* from = &pta->connect;
+
+    /* set timeout */
+    //setTimeOut(&client,10000,10000);
+
+    Packet* p = packetParse(pta->buf, pta->buf_len);
+    if(p == NULL)
+    {
+        free(pta);
+        pthread_exit(0);
+    }
+
+    /* check packet info */
+    packetCheck(p);
+
+    if(GET_QR(p->FLAGS) == 1)
+    {
+        /* recv from local dns server -- query result */
+        consoleLog(DEBUG_L0, "> recv from local dns\n");
+        uint16_t id = p->ID;
+        //memset(pta->buf, id, sizeof(uint16_t));
+
+        /* query addr */
+        struct sockaddr_in* client = queryMap(&AddrMAP, p->ID);
+        if(client != NULL)
+        {
+            /* send back */
+            sendto(server->_fd, pta->buf, pta->buf_len, 0, (SOCKADDR*)client, sizeof(struct sockaddr_in));
+            free(client);
+        }
+    }
+    else
+    {
+        /* recv from client -- query request */
+        int ret;
+        if(urlQuery(p, RECORDS, R_NUM) == 0)    //no result from url table
+        {
+            consoleLog(DEBUG_L0, "> query from local dns server\n");
+            /* query from local dns */
+            struct sockaddr_in dns_addr;
+
+            /* local dns server setting */
+            dns_addr.sin_addr.s_addr = LOCAL_DNS_ADDR;
+            dns_addr.sin_family = AF_INET;     //IPv4
+            dns_addr.sin_port = htons(53);     //Port
+
+            /* add to map */
+            //uint16_t id = !p->ID;
+            //memset(pta->buf, id, sizeof(uint16_t));
+            addToMap(&AddrMAP, p->ID, &pta->connect._addr);
+            mapCheck(&AddrMAP);
+            /* send to dns server */
+            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (SOCKADDR*)&dns_addr, sizeof(dns_addr));
+
+        }
+        else
+        {
+            consoleLog(DEBUG_L0, "> query OK. send back\n");
+            //Re-Parse
+            //Packet *temp = packetParse(buf, len);
+            //packetCheck(temp);
+            
+            /* generate response package */
+            int buff_len;
+            char* buff = responseFormat(&buff_len, p);
+            
+            /* send back to client */
+            ret = sendto(server->_fd, buff, buff_len, 0, (SOCKADDR*)&pta->connect._addr, sizeof(pta->connect._addr));
+            free(buff);
+        }
+        if(ret != 0){
+            consoleLog(DEBUG_L0,"> send to server failed. code %d\n",GetLastError());
+        }
+    }
+
+    /* mem free */
+    packetFree(p);
+    free(pta);
+    
+    /* close socket */
+    socketClose(&pta->connect);
+
+    /* pthread exit */
+    pthread_exit(0);
+
+}
 

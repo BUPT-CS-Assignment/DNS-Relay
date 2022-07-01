@@ -9,13 +9,13 @@
  * @param int num
  * @return int
  */
-int UrlQuery(Packet *src, char ***records, int num){
+int urlQuery(Packet *src, char ***records, int num){
     src->ANCOUNT = 0;
     src->ANS = NULL;
     int res[src->QDCOUNT][16];
     for(int i = 0; i < src->QDCOUNT; i++){
         /* Found All Matches */
-        int found = QnameSearch(src->QUESTS[i].QNAME, &res[i], records, num);
+        int found = qnameSearch(src->QUESTS[i].QNAME, &res[i], records, num);
 
         /* Mismatch */
         if(found == 0 || src->QUESTS[i].QTYPE != TYPE_A){
@@ -53,7 +53,7 @@ int UrlQuery(Packet *src, char ***records, int num){
  * @param int urls_num
  * @return int
  */
-int QnameSearch(char *src, int *res, char ***records, int urls_num){
+int qnameSearch(char *src, int *res, char ***records, int urls_num){
     if(src == NULL) return 0;
     int ret = 0;
     for(int i = 0; i < urls_num; i++){
