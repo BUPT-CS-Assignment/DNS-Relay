@@ -11,4 +11,10 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_executable(${PROJECT_NAME} ${SRC_DIR})
 
-target_link_libraries(${PROJECT_NAME} Ws2_32)
+IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    target_link_libraries(${PROJECT_NAME} Ws2_32)
+ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(${PROJECT_NAME} pthread)
+ENDIF()
+
+

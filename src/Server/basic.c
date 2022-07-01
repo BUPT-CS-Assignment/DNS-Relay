@@ -20,13 +20,13 @@ void start(Socket* server)
     }
 
     /* bind port */
-    if(bind(server->_fd, (SOCKADDR*)&server->_addr, sizeof(server->_addr)) < 0)
+    if(bind(server->_fd, (struct sockaddr*)&server->_addr, sizeof(server->_addr)) < 0)
     {
         consoleLog(DEBUG_L0, RED"> bind port %d failed\n", ntohs(server->_addr.sin_port));
         exit(-1);
     }
 
-    consoleLog(DEBUG_L0, "> server start\n");
+    consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
 
     pthread_t pt;
     int fromlen = sizeof(struct sockaddr_in);
@@ -35,7 +35,7 @@ void start(Socket* server)
         /* wait for new connection */
         pthread_args* pta = malloc(sizeof(pthread_args));
         pta->server = server;
-        pta->buf_len = recvfrom(server->_fd, &pta->buf, BUFFER_SIZE, 0, (SOCKADDR*)&pta->connect._addr, &fromlen);
+        pta->buf_len = recvfrom(server->_fd, &pta->buf, BUFFER_SIZE, 0, (struct sockaddr*)&pta->connect._addr, &fromlen);
         
         if(pta->buf_len > 0)
         {
@@ -87,7 +87,7 @@ void* connectHandle(void* param)
         if(client != NULL)
         {
             /* send back */
-            sendto(server->_fd, pta->buf, pta->buf_len, 0, (SOCKADDR*)client, sizeof(struct sockaddr_in));
+            sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
             free(client);
         }
     }
@@ -112,7 +112,7 @@ void* connectHandle(void* param)
             addToMap(&AddrMAP, p->ID, &pta->connect._addr);
             mapCheck(&AddrMAP);
             /* send to dns server */
-            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (SOCKADDR*)&dns_addr, sizeof(dns_addr));
+            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)&dns_addr, sizeof(dns_addr));
 
         }
         else
@@ -127,11 +127,17 @@ void* connectHandle(void* param)
             char* buff = responseFormat(&buff_len, p);
             
             /* send back to client */
-            ret = sendto(server->_fd, buff, buff_len, 0, (SOCKADDR*)&pta->connect._addr, sizeof(pta->connect._addr));
+            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&pta->connect._addr, sizeof(pta->connect._addr));
             free(buff);
         }
         if(ret != 0){
-            consoleLog(DEBUG_L0,"> send to server failed. code %d\n",GetLastError());
+            consoleLog(DEBUG_L0,"> send to server failed. code %d\n",
+#ifdef _WIN32
+            GetLastError()
+#else
+            errno
+#endif
+            );
         }
     }
 

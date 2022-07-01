@@ -17,7 +17,13 @@ int addToMap(AddrMap* map, uint16_t id, struct sockaddr_in* addr)
     if(map == NULL) return -1;
     if(map->_lock == MAP_LOCK)
     {
+
+#ifdef _WIN32
         Sleep(10);
+#else
+        usleep(10000);
+#endif
+
         if(map->_lock == MAP_LOCK)
         {
             return 1;
@@ -49,7 +55,13 @@ struct sockaddr_in*  queryMap(AddrMap* map,uint16_t id){
     if(map == NULL) return NULL;
     if(map->_lock == MAP_LOCK)
     {
+
+#ifdef _WIN32
         Sleep(10);
+#else
+        usleep(10000);
+#endif
+
         if(map->_lock == MAP_LOCK)
         {
             return NULL;
