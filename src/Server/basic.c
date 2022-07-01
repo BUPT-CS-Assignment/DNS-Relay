@@ -93,6 +93,8 @@ void* connectHandle(void* param)
     /* check packet info */
     packetCheck(p);
 
+    int ret;
+
     if(GET_QR(p->FLAGS) == 1)
     {
         /* recv from local dns server -- query result */
@@ -105,7 +107,7 @@ void* connectHandle(void* param)
         if(client != NULL)
         {
             /* send back */
-            sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
+            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
             free(client);
         }
     }
@@ -148,15 +150,16 @@ void* connectHandle(void* param)
             ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&pta->connect._addr, sizeof(pta->connect._addr));
             free(buff);
         }
-        if(ret != 0){
-            consoleLog(DEBUG_L0,"> send to server failed. code %d\n",
+    }
+    
+    if(ret < 0){
+        consoleLog(DEBUG_L0,"> send failed. code %d\n",
 #ifdef _WIN32
-            GetLastError()
+        GetLastError()
 #else
-            ret
+        ret
 #endif
-            );
-        }
+        );
     }
 
     /* mem free */
