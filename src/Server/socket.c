@@ -35,7 +35,11 @@ void socketClose(Socket* s)
     {
         return;
     }
+#ifdef _WIN32
     closesocket(s->_fd);
+#else 
+    close(s->_fd);
+#endif
 }
 
 
