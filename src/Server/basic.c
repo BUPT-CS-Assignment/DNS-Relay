@@ -28,8 +28,12 @@ void start(Socket* server)
 
     consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
 
+    /* pthread args */
     pthread_t pt;
+    pthread_attr_t attr;
+    
     int fromlen = sizeof(struct sockaddr_in);
+
     for(;;)
     {
         /* wait for new connection */
@@ -40,7 +44,21 @@ void start(Socket* server)
         if(pta->buf_len > 0)
         {
             /* new thread create */
-            pthread_create(&pt, NULL, connectHandle, (void*)pta);
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
+            int ret = pthread_create(&pt, &attr, connectHandle, (void*)pta);
+            if(ret != 0){
+                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",
+
+#ifdef _WIN32
+                GetLastError()
+#else
+                ret
+#endif
+                
+                );
+                
+                free(pta);
+            }
         }
         else
         {
@@ -135,7 +153,7 @@ void* connectHandle(void* param)
 #ifdef _WIN32
             GetLastError()
 #else
-            errno
+            ret
 #endif
             );
         }
@@ -147,6 +165,13 @@ void* connectHandle(void* param)
     
     /* close socket */
     socketClose(&pta->connect);
+
+
+#ifdef _WIN32
+    Sleep(10);
+#else
+    usleep(10000);
+#endif
 
     /* pthread exit */
     pthread_exit(0);
