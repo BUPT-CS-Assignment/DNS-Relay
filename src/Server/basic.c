@@ -90,15 +90,16 @@ void* connectHandle(void* param)
         pthread_exit(0);
     }
 
-    /* check packet info */
-    packetCheck(p);
-
     int ret;
 
     if(GET_QR(p->FLAGS) == 1)
     {
         /* recv from local dns server -- query result */
-        consoleLog(DEBUG_L0, "> recv from local dns\n");
+        consoleLog(DEBUG_L0, BOLDCYAN"> recv query result\n");
+
+        /* check packet info */
+        packetCheck(p);
+
         uint16_t id = p->ID;
         //memset(pta->buf, id, sizeof(uint16_t));
 
@@ -114,10 +115,16 @@ void* connectHandle(void* param)
     else
     {
         /* recv from client -- query request */
+        consoleLog(DEBUG_L0,BOLDBLUE"> recv query request\n");
+        /* check packet info */
+        packetCheck(p);
+
+
         int ret;
         if(urlQuery(p, RECORDS, R_NUM) == 0)    //no result from url table
         {
-            consoleLog(DEBUG_L0, "> query from local dns server\n");
+            consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
+
             /* query from local dns */
             struct sockaddr_in dns_addr;
 
@@ -137,7 +144,8 @@ void* connectHandle(void* param)
         }
         else
         {
-            consoleLog(DEBUG_L0, "> query OK. send back\n");
+            consoleLog(DEBUG_L0, BOLDGREEN"> query OK. send back\n");
+
             //Re-Parse
             //Packet *temp = packetParse(buf, len);
             //packetCheck(temp);
@@ -153,7 +161,7 @@ void* connectHandle(void* param)
     }
     
     if(ret < 0){
-        consoleLog(DEBUG_L0,"> send failed. code %d\n",
+        consoleLog(DEBUG_L0,BOLDRED"> send failed. code %d\n",
 #ifdef _WIN32
         GetLastError()
 #else
