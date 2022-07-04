@@ -4,23 +4,23 @@
 #pragma comment(lib,"Ws2_32.lib")
 
 int __DEBUG__ = 0;
+Socket _dns_server;
+void platformInit();
 
-int main(int argc,char* argv[]){
-
-#ifdef _WIN32
-    WSADATA w;
-    WSAStartup(MAKEWORD(2,2),&w);
-#endif
-
+int main(int argc, char* argv[])
+{
     /* arg parse */
-    consoleParse(argc,argv);
-    
-    /* server run */
-    Socket DNS;
-    socketInit(&DNS,SERVER_ADDR,53);
+    consoleParse(argc, argv);
 
-    start(&DNS);
-    
+    /* server run */
+    Socket relay_service;
+    socketInit(&relay_service, DNS_RELAY_ADDR, 53);
+
+    /* just for easy initialize. SOCKET not used*/
+    socketInit(&_dns_server, LOCAL_DNS_ADDR, 53);
+
+    start(&relay_service);
+
 #ifdef _WIN32
     WSACleanup();
 #endif
@@ -28,3 +28,4 @@ int main(int argc,char* argv[]){
     system("pause");
     return 0;
 }
+

@@ -3,15 +3,11 @@
 #include <console.h>
 #include <server.h>
 
-typedef struct thread_args
-{
-    char buf[BUFFER_SIZE];
-    Socket* server;
-    Socket connect;
-    int buf_len;
-
-}thread_args;
-
+/**
+ * @brief Start dns_realy  server
+ * 
+ * @param server Socket pointer
+ */
 void start(Socket* server)
 {
     if(server == NULL)
@@ -29,45 +25,18 @@ void start(Socket* server)
 
     consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
 
-    /* pthread args */
-#ifdef _WIN32
-
-
-#else
-    pthread_t pt;
-    pthread_attr_t attr;
-#endif
-
     int fromlen = sizeof(struct sockaddr_in);
 
     for(;;)
     {
-        /* wait for new connection */
+        /* udp wait for new connection */
         thread_args* args = malloc(sizeof(thread_args));
         args->server = server;
         args->buf_len = recvfrom(server->_fd, &args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
         
         if(args->buf_len > 0)
         {
-
-            /* new thread create */
-#ifdef _WIN32
-            HANDLE thread;
-            thread = CreateThread(NULL,0,connectHandle,args,0,NULL);
-            if(thread == NULL){
-                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",GetLastError());
-                free(args);
-            }
-            CloseHandle(thread);
-#else
-            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
-            int ret = pthread_create(&pt, &attr, connectHandle, (void*)args);
-            if(ret != 0){
-                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",ret);
-                free(args);
-            }
-#endif
-
+            threadCreate(connectHandle,args);
         }
         else
         {
@@ -80,6 +49,13 @@ void start(Socket* server)
     
 }
 
+
+/**
+ * @brief new connect thread handler
+ * 
+ * @param param new thread param
+ * @return void* 
+ */
 void* connectHandle(void* param)
 {
 
@@ -93,15 +69,7 @@ void* connectHandle(void* param)
     if(p == NULL)
     {
         free(args);
-
-#ifdef _WIN32
-        Sleep(10);
-        ExitThread(NULL);
-#else
-        usleep(10000);
-        pthread_exit(0);
-#endif
-
+        threadExit();
     }
 
     int ret;
@@ -132,35 +100,20 @@ void* connectHandle(void* param)
         /* check packet info */
         packetCheck(p);
 
-
-        int ret;
         if(urlQuery(p, RECORDS, R_NUM) == 0)    //no result from url table
         {
             consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
 
-            /* query from local dns */
-            struct sockaddr_in dns_addr;
-
-            /* local dns server setting */
-            dns_addr.sin_addr.s_addr = LOCAL_DNS_ADDR;
-            dns_addr.sin_family = AF_INET;     //IPv4
-            dns_addr.sin_port = htons(53);     //Port
-
             /* add to map */
             addToMap(&AddrMAP, p->ID, &args->connect._addr);
-            //mapCheck(&AddrMAP);
             
             /* send to dns server */
-            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&dns_addr, sizeof(dns_addr));
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
 
         }
         else
         {
             consoleLog(DEBUG_L0, BOLDGREEN"> query OK. send back\n");
-
-            //Re-Parse
-            //Packet *temp = packetParse(buf, len);
-            //packetCheck(temp);
             
             /* generate response package */
             int buff_len;
@@ -173,13 +126,7 @@ void* connectHandle(void* param)
     }
     
     if(ret < 0){
-        consoleLog(DEBUG_L0,BOLDRED"> send failed. code %d\n",
-#ifdef _WIN32
-        GetLastError()
-#else
-        ret
-#endif
-        );
+        consoleLog(DEBUG_L0,BOLDRED"> send failed. code %d\n",ERROR_CODE);
     }
 
     /* mem free */
@@ -188,15 +135,5 @@ void* connectHandle(void* param)
     
     /* close socket */
     socketClose(&args->connect);
-
-
-#ifdef _WIN32
-    Sleep(10);
-    ExitThread(NULL);
-#else
-    usleep(10000);
-    /* pthread exit */
-    pthread_exit(0);
-#endif
 }
 

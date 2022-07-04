@@ -2,6 +2,13 @@
 #include <console.h>
 #include <stdarg.h>
 
+
+/**
+ * @brief parse start args
+ * 
+ * @param argc args number
+ * @param argv args content
+ */
 void consoleParse(int argc, char* argv[]){
     if(argc > 1 && argv[1][0] == '-'){
         if(argv[1][1] == 'd'){
@@ -14,6 +21,14 @@ void consoleParse(int argc, char* argv[]){
 }
 
 
+
+/**
+ * @brief log infomation on console
+ * 
+ * @param debug_level log upon debug level
+ * @param fmt printf() format string
+ * @param ... printf() var_args
+ */
 void consoleLog(int debug_level,const char* fmt,...){
     /* DEBUG level check */
     if(debug_level > __DEBUG__) return;

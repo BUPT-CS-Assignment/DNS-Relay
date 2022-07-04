@@ -30,6 +30,14 @@
   * @param int len
   * @return Packet* packet
   */
+
+/**
+ * @brief parse Packet
+ * 
+ * @param buf package buffer pointer
+ * @param len package buffer length
+ * @return Packet* Packet pointer
+ */
 Packet *packetParse(char *buf, int len){
 
     Packet *dest = (Packet *)malloc(sizeof(Packet));
@@ -130,13 +138,13 @@ Packet *packetParse(char *buf, int len){
 }
 
 
+
 /**
- * @brief Construct Response Packet Buffer
- *
- * @param int* len
- * @param Packet* src
- * @param char** url
- * @return char* buff
+ * @brief generate response package buffer
+ * 
+ * @param len buffer length pointer
+ * @param src Packet pointer
+ * @return char* response package buffer pointer 
  */
 char *responseFormat(int *len, Packet *src){
 
@@ -237,10 +245,12 @@ char *responseFormat(int *len, Packet *src){
 }
 
 
+
+
 /**
- * @brief Check Packet Struct Info
- *
- * @param Packet* src
+ * @brief check Packet infomation
+ * 
+ * @param src Packet pointer
  */
 void packetCheck(Packet *src){
     printf("> Packet Check\n");
@@ -277,10 +287,11 @@ void packetCheck(Packet *src){
 }
 
 
+
 /**
- * @brief Free Packet Memory
- *
- * @param Packet* src
+ * @brief free Packet memory
+ * 
+ * @param src Packet pointer
  */
 void packetFree(Packet *src){
     /* Free Question Section */
@@ -305,11 +316,12 @@ void packetFree(Packet *src){
 }
 
 
+
 /**
- * @brief Check Packet Buffer Info
- *
- * @param char* buf
- * @param int len
+ * @brief check package buffer infomation
+ * 
+ * @param buf package buffer pointer
+ * @param len package buffer length
  */
 void bufferCheck(char *buf, int len){
     if(buf == NULL || len <= 0){

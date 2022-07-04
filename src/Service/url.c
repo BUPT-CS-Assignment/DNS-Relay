@@ -1,12 +1,13 @@
 #include <server.h>
 
+
 /**
- * @brief Url Parse
- *
- * @param void* src
- * @param char* dest
- * @param int mode
- * @return int
+ * @brief url parse
+ * 
+ * @param src origin url pointer
+ * @param dest parse result dest
+ * @param mode parse mode
+ * @return int parse result (1:success/0:failed)
  */
 int urlParse(void* src, char* dest, int mode)
 {
@@ -69,13 +70,14 @@ int urlParse(void* src, char* dest, int mode)
 }
 
 
+
 /**
- * @brief Format Url to Chars
- *
- * @param char* url
- * @param void* dest
- * @param int mode
- * @return int
+ * @brief format url to string
+ * 
+ * @param url origin url string
+ * @param dest format result dest
+ * @param mode format mode
+ * @return int format result code (1:success/0:failed)
  */
 int urlFormat(char* url, void* dest, int mode)
 {
@@ -98,6 +100,3 @@ int urlFormat(char* url, void* dest, int mode)
         return 0;
     }
 }
-
-
-

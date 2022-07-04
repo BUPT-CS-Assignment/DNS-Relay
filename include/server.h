@@ -3,24 +3,14 @@
 
 #include <main.h>
 
-#define SERVER_ADDR             INADDR_ANY
-#define LOCAL_DNS_ADDR          inet_addr("114.114.114.114")
+/************************************ Definitions ************************************/
 
-/* Static Records */
-static char* RECORDS[][2]={
-    {"bing.com","204.79.197.200"},
-    {"bing.com","13.107.21.200"},
-    {"bupt.edu.cn","10.3.9.161"},
-    {"noui.cloud","101.43.201.20"},
-    {"unique.com","220.177.198.124"}
-};
-static int R_NUM = 5;   //Records Num
+
+#define DNS_RELAY_ADDR          INADDR_ANY
+#define LOCAL_DNS_ADDR          inet_addr("114.114.114.114")
 
 /* MAX CONNECT NUM */
 #define MAX_CONNECT             128
-
-/* MAX BUFFER SIZE */
-#define BUFFER_SIZE             1024
 
 /* TYPE CODE*/
 #define TYPE_QNAME              -1
@@ -63,78 +53,109 @@ static int R_NUM = 5;   //Records Num
 #define GET_RCODE(FLAG)         ({(FLAG & 0x000f);})
 #define GET_QNAME_PTR(NAME)     ({NAME & 0x3fff;})
 
-/* Socket Struct */
-typedef struct Socket{
-    SOCKET _fd;
-    struct sockaddr_in _addr;
 
-}Socket;
-
-/* Question Section Struct */
-typedef struct Quest{
-    char      *QNAME;
+/**
+ * @brief DNS Question Section Struct
+ * 
+ */
+typedef struct Quest
+{
+    char* QNAME;
     uint16_t  QTYPE;
     uint16_t  QCLASS;
 
 }Quest;
 
-/* Answer Section Struct */
-typedef struct Answer{
+
+/**
+ * @brief DNS Answer Section Struct 
+ * 
+ */
+typedef struct Answer
+{
     uint16_t  NAME;
     uint16_t  TYPE;
     uint16_t  CLASS;
     uint16_t  RDLEN;
     uint32_t  TTL;
-    char      *RDATA;
+    char* RDATA;
 
 }Answer;
 
-/* Packet form */
-typedef struct Packet{
+
+/**
+ * @brief Packet Form Struct
+ * 
+ */
+typedef struct Packet
+{
     /* Origin Infomation */
-    char     *req_buf;       
-    int       buf_len;
+    char* req_buf;      //origin request buffer pointer       
+    int       buf_len;      //origin request buffer length
+
     /* Header Section */
     uint16_t  ID;
     uint16_t  FLAGS;
-    uint16_t  QDCOUNT;
-    uint16_t  ANCOUNT;
+    uint16_t  QDCOUNT;      //number of questions
+    uint16_t  ANCOUNT;      //number of answers
+
     /* Question Section */
-    Quest     *QUESTS;
+    Quest* QUESTS;
+
     /* Answer Section */
-    Answer    *ANS;
+    Answer* ANS;
 
 }Packet;
 
 
+/********************************** Global Variables *********************************/
+
+/* Static Records */
+static char* RECORDS[][2] = {
+    {"bing.com","204.79.197.200"},
+    {"bing.com","13.107.21.200"},
+    {"bupt.edu.cn","10.3.9.161"},
+    {"noui.cloud","101.43.201.20"},
+    {"unique.com","220.177.198.124"}
+};
+static int R_NUM = 5;   //Records Num
+
+extern Socket _dns_server;  //local dns server
+
+
+/************************************ Functions **************************************/
+
+
 /* Socket Base */
-int     socketInit(Socket* server,uint32_t address ,uint16_t port);
+int     socketInit(Socket* server, uint32_t address, uint16_t port);
 void    socketClose(Socket*);
 void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
 
+
 /* Server Base */
+void    start(Socket*);
 void*   connectHandle(void* param);
-void    start(Socket *);
 
 
 /* Address Query */
-int     urlQuery(Packet*, char ***records, int num);
-int     qnameSearch(char *src, int *res,char ***records, int num);
+int     urlQuery(Packet*, char*** records, int num);
+int     qnameSearch(char* src, int* res, char*** records, int num);
 
 
 /* Packet Handle */
-Packet  *packetParse(char *buf, int len);
-char    *responseFormat(int *len, Packet *);
-void    packetFree(Packet *);
+Packet* packetParse(char* buf, int len);
+char*   responseFormat(int* len, Packet*);
+void    packetFree(Packet*);
+
 
 /* Url Resolve */
-int     urlFormat(char *src, void *dest, int mode);
-int     urlParse(void *src, char *dest, int mode);
+int     urlFormat(char* src, void* dest, int mode);
+int     urlParse(void* src, char* dest, int mode);
 
 
 /* Packet Check */
-void    packetCheck(Packet *);
-void    bufferCheck(char *buf, int len);
+void    packetCheck(Packet*);
+void    bufferCheck(char* buf, int len);
 
 
 #endif

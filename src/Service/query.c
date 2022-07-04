@@ -1,13 +1,14 @@
 #include <server.h>
 #include <console.h>
 
+
 /**
- * @brief Url Query For Packet
- *
- * @param Packet* src
- * @param char** records
- * @param int num
- * @return int
+ * @brief url query for Packet
+ * 
+ * @param src Packet pointer
+ * @param records records table pointer
+ * @param num records number
+ * @return int query result number
  */
 int urlQuery(Packet *src, char ***records, int num){
     src->ANCOUNT = 0;
@@ -44,14 +45,15 @@ int urlQuery(Packet *src, char ***records, int num){
 }
 
 
+
 /**
- * @brief Qname Query From Local Records
- *
- * @param char* src
- * @param int** res
- * @param char** records
- * @param int urls_num
- * @return int
+ * @brief Qname query from local records table
+ * 
+ * @param src query source string
+ * @param res query result array
+ * @param records records table pointer
+ * @param urls_num records number
+ * @return int query result number
  */
 int qnameSearch(char *src, int *res, char ***records, int urls_num){
     if(src == NULL) return 0;
