@@ -5,7 +5,7 @@
 
 /**
  * @brief Start dns_realy  server
- * 
+ *
  * @param server Socket pointer
  */
 void start(Socket* server)
@@ -23,7 +23,7 @@ void start(Socket* server)
         exit(-1);
     }
 
-    consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
+    consoleLog(DEBUG_L0, "> server start. debug level L%d\n", __DEBUG__);
 
     int fromlen = sizeof(struct sockaddr_in);
 
@@ -32,11 +32,11 @@ void start(Socket* server)
         /* udp wait for new connection */
         thread_args* args = malloc(sizeof(thread_args));
         args->server = server;
-        args->buf_len = recvfrom(server->_fd, &args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
-        
+        args->buf_len = recvfrom(server->_fd, args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
+
         if(args->buf_len > 0)
         {
-            threadCreate(connectHandle,args);
+            threadCreate(connectHandle, args);
         }
         else
         {
@@ -46,15 +46,15 @@ void start(Socket* server)
 
     /* close server */
     socketClose(server);
-    
+
 }
 
 
 /**
  * @brief new connect thread handler
- * 
+ *
  * @param param new thread param
- * @return void* 
+ * @return void*
  */
 void* connectHandle(void* param)
 {
@@ -82,21 +82,20 @@ void* connectHandle(void* param)
         /* check packet info */
         packetCheck(p);
 
-        uint16_t id = p->ID;
+        uint16_t origin;
+        struct sockaddr_in from;
 
         /* query addr */
-        struct sockaddr_in* client = queryMap(&AddrMAP, p->ID);
-        if(client != NULL)
+        if(queryMap(p->ID, &origin, &from) == 0)
         {
-            /* send back */
-            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
-            free(client);
+            SET_ID(args->buf, &origin);
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&from, sizeof(from));
         }
     }
     else
     {
         /* recv from client -- query request */
-        consoleLog(DEBUG_L0,BOLDBLUE"> recv query request\n");
+        consoleLog(DEBUG_L0, BOLDBLUE"> recv query request\n");
         /* check packet info */
         packetCheck(p);
 
@@ -105,8 +104,9 @@ void* connectHandle(void* param)
             consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
 
             /* add to map */
-            addToMap(&AddrMAP, p->ID, &args->connect._addr);
-            
+            uint16_t converted = addToMap(p->ID,&args->connect._addr);
+            SET_ID(args->buf,&converted);
+
             /* send to dns server */
             ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
 
@@ -114,25 +114,26 @@ void* connectHandle(void* param)
         else
         {
             consoleLog(DEBUG_L0, BOLDGREEN"> query OK. send back\n");
-            
+
             /* generate response package */
             int buff_len;
             char* buff = responseFormat(&buff_len, p);
-            
+
             /* send back to client */
             ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&args->connect._addr, sizeof(args->connect._addr));
             free(buff);
         }
     }
-    
-    if(ret < 0){
-        consoleLog(DEBUG_L0,BOLDRED"> send failed. code %d\n",ERROR_CODE);
+
+    if(ret < 0)
+    {
+        consoleLog(DEBUG_L0, BOLDRED"> send failed. code %d\n", ERROR_CODE);
     }
 
     /* mem free */
     packetFree(p);
     free(args);
-    
+
     /* close socket */
     socketClose(&args->connect);
 }

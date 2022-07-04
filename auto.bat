@@ -7,4 +7,4 @@ make
 % auto run with debug-level-2 %
 cd ..
 cd bin
-dnsrelay -d2
+dnsrelay -d1

@@ -33,6 +33,10 @@
 #define RCODE_NOT_IMPLEMENTED   0x4
 #define RCODE_REFUSED           0x5
 
+/* ID OPERATION */
+#define SET_ID(BUF,ID)          memcpy(BUF,ID,sizeof(uint16_t));
+#define GET_ID(BUF)             ({(*(uint16_t *)BUF);})
+
 /* Set FLAGS */
 #define SET_QR(FLAG)            FLAG |= 0x8000
 #define SET_AA(FLAG)            FLAG |= 0x400

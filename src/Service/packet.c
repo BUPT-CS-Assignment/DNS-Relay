@@ -31,16 +31,17 @@
   * @return Packet* packet
   */
 
-/**
- * @brief parse Packet
- * 
- * @param buf package buffer pointer
- * @param len package buffer length
- * @return Packet* Packet pointer
- */
-Packet *packetParse(char *buf, int len){
+  /**
+   * @brief parse Packet
+   *
+   * @param buf package buffer pointer
+   * @param len package buffer length
+   * @return Packet* Packet pointer
+   */
+Packet* packetParse(char* buf, int len)
+{
 
-    Packet *dest = (Packet *)malloc(sizeof(Packet));
+    Packet* dest = (Packet*)malloc(sizeof(Packet));
     memset(dest, 0, sizeof(Packet));
     dest->ANS = NULL;
 
@@ -65,11 +66,12 @@ Packet *packetParse(char *buf, int len){
     |                    ARCOUNT                    |
     +-----------------------------------------------+
     */
-    memcpy(&dest->ID, buf, sizeof(uint16_t));
-    dest->FLAGS = ntohs(*((uint16_t *)(buf + 2)));
-    dest->QDCOUNT = ntohs(*((uint16_t *)(buf + 4)));
-    dest->ANCOUNT = ntohs(*(uint16_t *)(buf + 6));
-    char *buf_pos = buf + 12;
+    //memcpy(&dest->ID, buf, sizeof(uint16_t));
+    dest->ID = GET_ID(buf);
+    dest->FLAGS = ntohs(*((uint16_t*)(buf + 2)));
+    dest->QDCOUNT = ntohs(*((uint16_t*)(buf + 4)));
+    dest->ANCOUNT = ntohs(*(uint16_t*)(buf + 6));
+    char* buf_pos = buf + 12;
 
 
     /* Parse Question Section
@@ -83,19 +85,20 @@ Packet *packetParse(char *buf, int len){
     |                    QCLASS                     |
     +-----------------------------------------------+
     */
-    dest->QUESTS = (Quest *)malloc(sizeof(Quest) * dest->QDCOUNT);
-    for(int i = 0; i < dest->QDCOUNT; i++){
+    dest->QUESTS = (Quest*)malloc(sizeof(Quest) * dest->QDCOUNT);
+    for(int i = 0; i < dest->QDCOUNT; i++)
+    {
         /* read till '\0' */
         int q_len = strlen(buf_pos);
 
         /* QNAME　parse */
-        dest->QUESTS[i].QNAME = (char *)malloc(260);
+        dest->QUESTS[i].QNAME = (char*)malloc(260);
         urlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
 
         /* QTYPE parse */
         buf_pos += (q_len + 1);
-        dest->QUESTS[i].QTYPE = ntohs(*((uint16_t *)buf_pos));
-        dest->QUESTS[i].QCLASS = ntohs(*(uint16_t *)(buf_pos + 2));
+        dest->QUESTS[i].QTYPE = ntohs(*((uint16_t*)buf_pos));
+        dest->QUESTS[i].QCLASS = ntohs(*(uint16_t*)(buf_pos + 2));
         buf_pos += 4;
     }
 
@@ -120,17 +123,18 @@ Packet *packetParse(char *buf, int len){
     /                                               /
     +-----------------------------------------------+
     */
-    dest->ANS = (Answer *)malloc(sizeof(Answer) * dest->ANCOUNT);
-    for(int i = 0; i < dest->ANCOUNT; i++){
+    dest->ANS = (Answer*)malloc(sizeof(Answer) * dest->ANCOUNT);
+    for(int i = 0; i < dest->ANCOUNT; i++)
+    {
         /* Set Basic Info */
-        dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t *)buf_pos));
-        dest->ANS[i].TYPE = ntohs(*(uint16_t *)(buf_pos + 2));
-        dest->ANS[i].CLASS = ntohs(*(uint16_t *)(buf_pos + 4));
-        dest->ANS[i].TTL = ntohl(*(uint32_t *)(buf_pos + 6));
+        dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t*)buf_pos));
+        dest->ANS[i].TYPE = ntohs(*(uint16_t*)(buf_pos + 2));
+        dest->ANS[i].CLASS = ntohs(*(uint16_t*)(buf_pos + 4));
+        dest->ANS[i].TTL = ntohl(*(uint32_t*)(buf_pos + 6));
 
         /* Set Resource Info*/
-        dest->ANS[i].RDLEN = ntohs(*(uint16_t *)(buf_pos + 10));
-        dest->ANS[i].RDATA = (char *)malloc(17);
+        dest->ANS[i].RDLEN = ntohs(*(uint16_t*)(buf_pos + 10));
+        dest->ANS[i].RDATA = (char*)malloc(17);
         urlParse(buf_pos + 12, dest->ANS[i].RDATA, TYPE_A);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
@@ -141,12 +145,13 @@ Packet *packetParse(char *buf, int len){
 
 /**
  * @brief generate response package buffer
- * 
+ *
  * @param len buffer length pointer
  * @param src Packet pointer
- * @return char* response package buffer pointer 
+ * @return char* response package buffer pointer
  */
-char *responseFormat(int *len, Packet *src){
+char* responseFormat(int* len, Packet* src)
+{
 
     /* Set Flags
     +--+-----------+--+--+--+--+--------+-----------+
@@ -158,7 +163,8 @@ char *responseFormat(int *len, Packet *src){
     SET_RD(flag);
 
     /* Answer Section */
-    if(src->ANCOUNT == 0){
+    if(src->ANCOUNT == 0)
+    {
         SET_AA(flag);
         SET_RCODE(flag, RCODE_NAME_ERROR);
     }
@@ -174,10 +180,12 @@ char *responseFormat(int *len, Packet *src){
     */
     uint16_t names[src->ANCOUNT];
     names[0] = 0xc00c;  //Pos = 1100000000001100 
-    for(int i = 1; i < src->ANCOUNT; i++){
-        names[i] = names[i - 1]  /* + strlen(src->QUESTS[i].QNAME) + 5 */ ;
+    for(int i = 1; i < src->ANCOUNT; i++)
+    {
+        names[i] = names[i - 1]  /* + strlen(src->QUESTS[i].QNAME) + 5 */;
     }
-    for(int i = 0; i < src->ANCOUNT; i++){
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
         names[i] = htons(names[i]);
     }
 
@@ -185,7 +193,8 @@ char *responseFormat(int *len, Packet *src){
 
     /* ResData Resolve */
     uint32_t resData[src->ANCOUNT];
-    for(int i = 0; i < src->ANCOUNT; i++){
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
         resData[i] = 0;
         urlFormat(src->ANS[i].RDATA, &resData[i], src->ANS[i].TYPE);
         resData[i] = htonl(resData[i]);
@@ -195,7 +204,7 @@ char *responseFormat(int *len, Packet *src){
     /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
 
     *len = src->buf_len + src->ANCOUNT * 16;
-    char *dest = (char *)malloc(*len + 1);
+    char* dest = (char*)malloc(*len + 1);
 
     /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
 
@@ -226,9 +235,10 @@ char *responseFormat(int *len, Packet *src){
     memcpy(dest + 6, &ancount, sizeof(uint16_t));    /* Translate ANCOUNT */
 
     /* set data section */
-    for(int i = 0; i < src->ANCOUNT; i++){
-        char *dataPos = dest + (src->buf_len + (i * 16));
-        Answer *pANS = &(src->ANS[i]);
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
+        char* dataPos = dest + (src->buf_len + (i * 16));
+        Answer* pANS = &(src->ANS[i]);
         uint16_t type = htons(pANS->TYPE);
         uint16_t class = htons(pANS->CLASS);
         uint32_t ttl = htonl(pANS->TTL);
@@ -249,13 +259,18 @@ char *responseFormat(int *len, Packet *src){
 
 /**
  * @brief check Packet infomation
- * 
+ *
  * @param src Packet pointer
  */
-void packetCheck(Packet *src){
+void packetCheck(Packet* src)
+{
+    if(__DEBUG__ == DEBUG_L0)   return;
+
     printf("> Packet Check\n");
-    if(src == NULL){
+    if(src == NULL)
+    {
         printf("<null-ptr>\n");
+        return;
     }
     /* Origin Buffer Check */
     bufferCheck(src->req_buf, src->buf_len);
@@ -271,13 +286,15 @@ void packetCheck(Packet *src){
     printf("   QDCOUNT= %d  ANCOUNT= %d\n", src->QDCOUNT, src->ANCOUNT);
 
     /* Check Question Section */
-    for(int i = 0; i < src->QDCOUNT; i++){
+    for(int i = 0; i < src->QDCOUNT; i++)
+    {
         printf(" - QNAME(%d)= '%s'\n", i, src->QUESTS[i].QNAME);
         printf("   QTYPE(%d)= %d  QCLASS(%d)= %d\n", i, src->QUESTS[i].QTYPE, i, src->QUESTS[i].QCLASS);
     }
 
     /* Check Answer Section */
-    for(int i = 0; i < src->ANCOUNT; i++){
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
         printf(" - NAMEPTR(%d)= %d\n", i, src->ANS[i].NAME);
         printf("   TYPE(%d)= %d  CLASS(%d)= %d  TTL(%d)= %u\n", i, src->ANS[i].TYPE,
             i, src->ANS[i].CLASS, i, src->ANS[i].TTL);
@@ -290,21 +307,26 @@ void packetCheck(Packet *src){
 
 /**
  * @brief free Packet memory
- * 
+ *
  * @param src Packet pointer
  */
-void packetFree(Packet *src){
+void packetFree(Packet* src)
+{
     /* Free Question Section */
-    if(src->QUESTS != NULL){
-        for(int i = 0; i < src->QDCOUNT; i++){
+    if(src->QUESTS != NULL)
+    {
+        for(int i = 0; i < src->QDCOUNT; i++)
+        {
             free(src->QUESTS[i].QNAME);
         }
         free(src->QUESTS);
     }
 
     /* Free Answer Section */
-    if(src->ANS != NULL){
-        for(int i = 0; i < src->ANCOUNT; i++){
+    if(src->ANS != NULL)
+    {
+        for(int i = 0; i < src->ANCOUNT; i++)
+        {
             free(src->ANS[i].RDATA);
         }
         free(src->ANS);
@@ -319,23 +341,32 @@ void packetFree(Packet *src){
 
 /**
  * @brief check package buffer infomation
- * 
+ *
  * @param buf package buffer pointer
  * @param len package buffer length
  */
-void bufferCheck(char *buf, int len){
-    if(buf == NULL || len <= 0){
+void bufferCheck(char* buf, int len)
+{
+    if(buf == NULL || len <= 0)
+    {
         printf("<none buff>\n");
         return;
     }
-    printf(" - Packet Length= %d\n   [Packet] ", len);
-    for(int i = 0; i < len; i++){
+    printf(" - Packet Length= %d\n", len);
+
+    if(__DEBUG__ < DEBUG_L2)    return;
+
+    printf("[   [Origin] ");
+    for(int i = 0; i < len; i++)
+    {
         /* Format Output */
         printf("%02X ", (unsigned char)buf[i]);
-        if(i == len - 1){
+        if(i == len - 1)
+        {
             printf("\n");
         }
-        else if(i > 0 && (i + 1) % 16 == 0){
+        else if(i > 0 && (i + 1) % 16 == 0)
+        {
             printf("\n            ");
         }
     }

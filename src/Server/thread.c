@@ -15,7 +15,7 @@ void threadCreate(void*(*thread_handler)(void*) ,thread_args* args){
 
 #ifdef _WIN32
     HANDLE thread;
-    thread = CreateThread(NULL,0,thread_handler,args,0,NULL);
+    thread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)thread_handler,args,0,NULL);
     if(thread == NULL){
         consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",GetLastError());
         free(args);
@@ -46,10 +46,10 @@ void threadExit(){
 
 #ifdef _WIN32
         Sleep(10);
-        ExitThread(NULL);
+        //ExitThread(0);
 #else
         usleep(10000);
-        pthread_exit(0);
+        //pthread_exit(0);
 #endif
 
 
