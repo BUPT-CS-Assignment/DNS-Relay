@@ -14,6 +14,7 @@ typedef struct MapNode
     struct sockaddr_in _from;
     struct MapNode* _pre;
     struct MapNode* _next;
+    
 }MapNode;
 
 typedef struct AddrMap
@@ -21,6 +22,7 @@ typedef struct AddrMap
     MapNode* _head;
     size_t _len;
     uint8_t _lock;
+
 }AddrMap;
 
 extern AddrMap AddrMAP;

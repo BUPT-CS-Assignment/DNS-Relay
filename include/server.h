@@ -67,6 +67,7 @@ static int R_NUM = 5;   //Records Num
 typedef struct Socket{
     SOCKET _fd;
     struct sockaddr_in _addr;
+
 }Socket;
 
 /* Question Section Struct */
@@ -91,7 +92,7 @@ typedef struct Answer{
 /* Packet form */
 typedef struct Packet{
     /* Origin Infomation */
-    char     *req_buf;
+    char     *req_buf;       
     int       buf_len;
     /* Header Section */
     uint16_t  ID;
@@ -115,10 +116,8 @@ void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
 void*   connectHandle(void* param);
 void    start(Socket *);
 
-/* 
 
 /* Address Query */
-//int   AddrReadin();
 int     urlQuery(Packet*, char ***records, int num);
 int     qnameSearch(char *src, int *res,char ***records, int num);
 

@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
-#include <pthread.h>
 
 #ifdef _WIN32
 

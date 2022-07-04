@@ -3,13 +3,14 @@
 #include <console.h>
 #include <server.h>
 
-typedef struct pthread_args
+typedef struct thread_args
 {
     char buf[BUFFER_SIZE];
     Socket* server;
     Socket connect;
     int buf_len;
-}pthread_args;
+
+}thread_args;
 
 void start(Socket* server)
 {
@@ -29,40 +30,48 @@ void start(Socket* server)
     consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
 
     /* pthread args */
+#ifdef _WIN32
+
+
+#else
     pthread_t pt;
     pthread_attr_t attr;
-    
+#endif
+
     int fromlen = sizeof(struct sockaddr_in);
 
     for(;;)
     {
         /* wait for new connection */
-        pthread_args* pta = malloc(sizeof(pthread_args));
-        pta->server = server;
-        pta->buf_len = recvfrom(server->_fd, &pta->buf, BUFFER_SIZE, 0, (struct sockaddr*)&pta->connect._addr, &fromlen);
+        thread_args* args = malloc(sizeof(thread_args));
+        args->server = server;
+        args->buf_len = recvfrom(server->_fd, &args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
         
-        if(pta->buf_len > 0)
+        if(args->buf_len > 0)
         {
-            /* new thread create */
-            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
-            int ret = pthread_create(&pt, &attr, connectHandle, (void*)pta);
-            if(ret != 0){
-                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",
 
+            /* new thread create */
 #ifdef _WIN32
-                GetLastError()
-#else
-                ret
-#endif
-                
-                );
-                
-                free(pta);
+            HANDLE thread;
+            thread = CreateThread(NULL,0,connectHandle,args,0,NULL);
+            if(thread == NULL){
+                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",GetLastError());
+                free(args);
             }
+            CloseHandle(thread);
+#else
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
+            int ret = pthread_create(&pt, &attr, connectHandle, (void*)args);
+            if(ret != 0){
+                consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",ret);
+                free(args);
+            }
+#endif
+
         }
         else
         {
-            free(pta);
+            free(args);
         }
     }
 
@@ -75,19 +84,24 @@ void* connectHandle(void* param)
 {
 
     /* thread params parse */
-    pthread_args* pta = (pthread_args*)param;
+    thread_args* args = (thread_args*)param;
 
-    Socket* server = pta->server;
-    Socket* from = &pta->connect;
+    Socket* server = args->server;      //dns-relay server
+    Socket* from = &args->connect;      //dns reqeust/response from
 
-    /* set timeout */
-    //setTimeOut(&client,10000,10000);
-
-    Packet* p = packetParse(pta->buf, pta->buf_len);
+    Packet* p = packetParse(args->buf, args->buf_len);
     if(p == NULL)
     {
-        free(pta);
+        free(args);
+
+#ifdef _WIN32
+        Sleep(10);
+        ExitThread(NULL);
+#else
+        usleep(10000);
         pthread_exit(0);
+#endif
+
     }
 
     int ret;
@@ -101,14 +115,13 @@ void* connectHandle(void* param)
         packetCheck(p);
 
         uint16_t id = p->ID;
-        //memset(pta->buf, id, sizeof(uint16_t));
 
         /* query addr */
         struct sockaddr_in* client = queryMap(&AddrMAP, p->ID);
         if(client != NULL)
         {
             /* send back */
-            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
             free(client);
         }
     }
@@ -134,12 +147,11 @@ void* connectHandle(void* param)
             dns_addr.sin_port = htons(53);     //Port
 
             /* add to map */
-            //uint16_t id = !p->ID;
-            //memset(pta->buf, id, sizeof(uint16_t));
-            addToMap(&AddrMAP, p->ID, &pta->connect._addr);
-            mapCheck(&AddrMAP);
+            addToMap(&AddrMAP, p->ID, &args->connect._addr);
+            //mapCheck(&AddrMAP);
+            
             /* send to dns server */
-            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)&dns_addr, sizeof(dns_addr));
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&dns_addr, sizeof(dns_addr));
 
         }
         else
@@ -155,7 +167,7 @@ void* connectHandle(void* param)
             char* buff = responseFormat(&buff_len, p);
             
             /* send back to client */
-            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&pta->connect._addr, sizeof(pta->connect._addr));
+            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&args->connect._addr, sizeof(args->connect._addr));
             free(buff);
         }
     }
@@ -172,20 +184,19 @@ void* connectHandle(void* param)
 
     /* mem free */
     packetFree(p);
-    free(pta);
+    free(args);
     
     /* close socket */
-    socketClose(&pta->connect);
+    socketClose(&args->connect);
 
 
 #ifdef _WIN32
     Sleep(10);
+    ExitThread(NULL);
 #else
     usleep(10000);
-#endif
-
     /* pthread exit */
     pthread_exit(0);
-
+#endif
 }
 
