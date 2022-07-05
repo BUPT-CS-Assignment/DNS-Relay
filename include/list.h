@@ -175,8 +175,22 @@ static inline int mylist_empty(const mylist_head *head) {
  * @param {mylist_head} *head 链表头节点
  * @return {*}
  */
-static inline void mylist_rotate_node(mylist_head *node, mylist_head *head) {
+static inline void mylist_rotate_node_tail(mylist_head *node,
+                                           mylist_head *head) {
   if (!mylist_empty(head)) {
     mylist_move_tail(node, head);
+  }
+}
+/**
+ * @description:
+ * 把某一指定节点旋转至链表的最前，使用时应注意node属于head对应的链表
+ * @param {mylist_head} *node 要被至于最后的节点
+ * @param {mylist_head} *head 链表头节点
+ * @return {*}
+ */
+static inline void mylist_rotate_node_head(mylist_head *node,
+                                           mylist_head *head) {
+  if (!mylist_empty(head)) {
+    mylist_move_head(node, head);
   }
 }
