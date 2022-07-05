@@ -1,6 +1,5 @@
 #include <stddef.h>
 
-
 /**
  * @description: 模仿Linux中list_head实现的双向链表，用于查找
  */
@@ -23,17 +22,24 @@ typedef struct list_head {
  * @return
  * 以字节为单位的两者相减值，即结构体首地址，实现由结构体成员地址求结构体地址
  */
-#define container_of(ptr, type, member)                                        \
-  ({                                                                           \
-    const typeof(((type *)0)->member) *_mptr = (ptr);                          \
-    (type *)((char *)_mptr - offsetof(type, member));                          \
-  })
-#define mylist_entry(ptr, type, member) container_of(ptr, type, member)
+// #define container_of(ptr, type, member)                                        \
+//   ({                                                                           \
+//     const typeof(((type *)0)->member) *_mptr = (ptr);                          \
+//     (type *)((char *)_mptr - offsetof(type, member));                          \
+//   })
+
+/**
+ * @description: container_of的弱化版，失去了内核编程的严谨性以回避typeof
+ * @return {*}
+ */
+#define mylist_entry(ptr, type, member)                                        \
+  ({ (type *)((char *)ptr - offsetof(type, member)); })
+
 /**
  * @description: 从头到尾遍历
  * @return {*}
  */
-#define mylist_for_each(pos, head)                                               \
+#define mylist_for_each(pos, head, type)                                       \
   for (pos = (head)->next; pos != (head); pos = pos->next)
 
 static inline void INIT_MY_LIST_HEAD(mylist_head *list) {
@@ -169,7 +175,7 @@ static inline int mylist_empty(const mylist_head *head) {
  * @param {mylist_head} *head 链表头节点
  * @return {*}
  */
-static inline void rotate_node(mylist_head *node, mylist_head *head) {
+static inline void mylist_rotate_node(mylist_head *node, mylist_head *head) {
   if (!mylist_empty(head)) {
     mylist_move_tail(node, head);
   }
