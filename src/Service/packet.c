@@ -178,10 +178,14 @@ char* responseFormat(int* len, Packet* src)
          ^ Pointer Recognize
     */
     uint16_t names[src->ANCOUNT];
-    names[0] = htons(0xc00c);           //pos = 1100000000001100 
-    for(int i = 1; i < src->ANCOUNT; i++)
+    uint16_t p_offset;          //quset section offset      
+    for(int i = 0; i < src->ANCOUNT; i++)
     {
-        names[i] = names[i - 1];
+        p_offset = 0xc00c;      //pos = 1100000000001100 
+        for(int j = 0; j < i; j++){
+            p_offset += strlen(src->QUESTS[src->ANS[j].QPOS].QNAME) + 1 + 4; //QNAME + QTYPE(2) + QCLASS(2)
+        }
+        names[i] = htons(p_offset);
     }
 
     /* --------------------------------- Answer Section ---------------------------------*/
@@ -209,7 +213,7 @@ char* responseFormat(int* len, Packet* src)
     /* Set Answer Section
      0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                     NAME                      |
+    |                 NAME (POINTER)                |
     +-----------------------------------------------+
     |                     TYPE                      |
     +-----------------------------------------------+
@@ -243,10 +247,10 @@ char* responseFormat(int* len, Packet* src)
         uint32_t ttl = htonl(pANS->TTL);
 
         /* copy data to data buffer */
-        memcpy(dataPos, &names[i], sizeof(uint16_t));           // Set NAME poiner 16 Bits
-        memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE 16 Bits
-        memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS 16 Bits
-        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL 32 Bits
+        memcpy(dataPos, &names[i], sizeof(uint16_t));           // Set NAME poiner  16 Bits
+        memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE         16 Bits
+        memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS        16 Bits
+        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL          32 Bits
         memcpy((dataPos + 12), resData[i], pANS->RDLEN);        // Set RDATA
         memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
         free(resData[i]);                                       // Free resData

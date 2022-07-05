@@ -90,6 +90,7 @@ typedef struct Quest
  */
 typedef struct Answer
 {
+    uint8_t     QPOS;
     uint16_t    NAME;
     uint16_t    TYPE;
     uint16_t    CLASS;

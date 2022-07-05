@@ -3,11 +3,8 @@
 
 #include "main.h"
 
-#define MAP_FREE            0
-#define MAP_LOCK            1
-
 #define MAX_MAP_SIZE        128
-#define MAP_TTL             10
+#define CONVERT_TTL         10
 
 typedef struct MapNode{
     uint16_t _origin;
@@ -16,7 +13,7 @@ typedef struct MapNode{
 
 }MapNode;
 
-static MapNode _Map[MAX_MAP_SIZE];
+static MapNode* _Map[MAX_MAP_SIZE];
 static int _map_allocator;
 
 void        mapInit();

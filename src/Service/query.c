@@ -31,6 +31,7 @@ int urlQuery(Packet *src, char ***records, int num){
         /* Load All Match Results */
         for(int j = 0; j < found; j++){
             Answer* temp = (Answer *)malloc(sizeof(Answer) * found);
+            src->ANS[pos+j].QPOS = i;
             src->ANS[pos+j].NAME = 12;
             src->ANS[pos+j].TYPE = src->QUESTS[i].QTYPE;
             src->ANS[pos+j].CLASS = src->QUESTS[i].QCLASS;

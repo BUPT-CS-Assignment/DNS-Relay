@@ -8,7 +8,9 @@
  */
 void MapInit()
 {
-    memset(_Map, 0, sizeof(_Map));
+    for(int i = 0; i < MAX_MAP_SIZE; i++){
+        _Map[i] = NULL;
+    }
     _map_allocator = 0;
 }
 
@@ -23,19 +25,22 @@ void MapInit()
  */
 uint16_t addToMap(uint16_t origin, struct sockaddr_in* addr)
 {
-    if(addr == NULL)    return;
+    if(addr == NULL)    return UINT16_MAX;
 
     /* add allocator counter*/
-    _map_allocator = (_map_allocator + 1) % MAX_MAP_SIZE;
-    uint16_t converted = _map_allocator;
+    _map_allocator = (_map_allocator + 1) % MAX_MAP_SIZE;   //avoid out of bounds
+    uint16_t converted = _map_allocator;                    //allocate converted id
 
     /* wait for old-timeout */
-    while(_Map[converted]._time_out > time(NULL));
+    while(_Map[converted] != NULL && _Map[converted]->_time_out > time(NULL));
 
     /* fill new info */
-    _Map[converted]._time_out = time(NULL) + MAP_TTL;
-    _Map[converted]._origin = origin;
-    memcpy(&_Map[converted]._from, addr, sizeof(struct sockaddr_in));
+    MapNode* temp = _Map[converted];
+    _Map[converted] = malloc(sizeof(MapNode));              //allocate new memory
+    free(temp);                                             //free old memory
+    _Map[converted]->_time_out = time(NULL) + CONVERT_TTL;  //set new time_stamp
+    _Map[converted]->_origin = origin;                      //record origin id
+    memcpy(&_Map[converted]->_from, addr, sizeof(struct sockaddr_in));  //record origin address
 
     return converted;
 
@@ -49,21 +54,24 @@ uint16_t addToMap(uint16_t origin, struct sockaddr_in* addr)
  * @param converted converted id
  * @param origin origin request id
  * @param from origin request address
- * @return int query result (0:success/1:failed)
+ * @return int query result (0:success/-1:failed)
  */
 int queryMap(uint16_t converted, uint16_t* origin, struct sockaddr_in* from)
 {
-    if(origin == NULL || from == NULL || converted >= MAX_MAP_SIZE)
+    /* pre check */
+    if(origin == NULL || from == NULL || converted >= MAX_MAP_SIZE || _Map[converted] == NULL)
     {
-        return 1;
+        return -1;
     }
 
     /* copy infomation */
-    memcpy(origin,&_Map[converted]._origin,sizeof(uint16_t));
-    memcpy(from,&_Map[converted]._from,sizeof(struct sockaddr_in));
+    memcpy(origin,&_Map[converted]->_origin,sizeof(uint16_t));
+    memcpy(from,&_Map[converted]->_from,sizeof(struct sockaddr_in));
 
     /* clear TTL */
-    _Map[converted]._time_out = 0;
+    MapNode* temp = _Map[converted];
+    _Map[converted] = NULL;
+
 
     return 0;
 
