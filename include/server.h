@@ -57,7 +57,6 @@
 #define GET_RCODE(FLAG)         ({(FLAG & 0x000f);})
 #define GET_QNAME_PTR(NAME)     ({NAME & 0x3fff;})
 
-
 /**
  * @brief DNS Question Section Struct
  * 
@@ -118,11 +117,12 @@ typedef struct Packet
 static char* RECORDS[][2] = {
     {"bing.com","204.79.197.200"},
     {"bing.com","13.107.21.200"},
+    {"bing.com","2620:1ec:c11::300"},
     {"bupt.edu.cn","10.3.9.161"},
     {"noui.cloud","101.43.201.20"},
     {"unique.com","220.177.198.124"}
 };
-static int R_NUM = 5;   //Records Num
+static int R_NUM = 6;   //Records Num
 
 extern Socket _dns_server;  //local dns server
 
@@ -143,11 +143,13 @@ void*   connectHandle(void* param);
 
 /* Address Query */
 int     urlQuery(Packet*, char*** records, int num);
-int     qnameSearch(char* src, int* res, char*** records, int num);
+int     qnameSearch(char *src,int type,int *res, char ***records, int urls_num);
 
 
 /* Packet Handle */
 Packet* packetParse(char* buf, int len);
+size_t  getBufferSize(uint16_t type);
+size_t  getTypeSize(uint16_t type);
 char*   responseFormat(int* len, Packet*);
 void    packetFree(Packet*);
 

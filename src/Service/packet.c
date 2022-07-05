@@ -23,21 +23,13 @@
  */
 
 
- /**
-  * @brief Parse Packet
-  *
-  * @param char* buf
-  * @param int len
-  * @return Packet* packet
-  */
-
-  /**
-   * @brief parse Packet
-   *
-   * @param buf package buffer pointer
-   * @param len package buffer length
-   * @return Packet* Packet pointer
-   */
+/**
+ * @brief parse Packet
+ *
+ * @param buf package buffer pointer
+ * @param len package buffer length
+ * @return Packet* Packet pointer
+ */
 Packet* packetParse(char* buf, int len)
 {
 
@@ -92,7 +84,7 @@ Packet* packetParse(char* buf, int len)
         int q_len = strlen(buf_pos);
 
         /* QNAME　parse */
-        dest->QUESTS[i].QNAME = (char*)malloc(260);
+        dest->QUESTS[i].QNAME = (char*)malloc(64 + 1);
         urlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
 
         /* QTYPE parse */
@@ -134,12 +126,18 @@ Packet* packetParse(char* buf, int len)
 
         /* Set Resource Info*/
         dest->ANS[i].RDLEN = ntohs(*(uint16_t*)(buf_pos + 10));
-        dest->ANS[i].RDATA = (char*)malloc(17);
-        urlParse(buf_pos + 12, dest->ANS[i].RDATA, TYPE_A);
+
+        /* Parse Url */
+        dest->ANS[i].RDATA = (char*)malloc(getBufferSize(dest->ANS[i].TYPE));
+        urlParse(buf_pos + 12, dest->ANS[i].RDATA, dest->ANS[i].TYPE);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
     return dest;
 }
+
+
+
+
 
 
 
@@ -192,21 +190,18 @@ char* responseFormat(int* len, Packet* src)
     /* -----------------------------IMPROVE-REQUIRED-0------------------------------------*/
 
     /* ResData Resolve */
-    uint32_t resData[src->ANCOUNT];
+    *len = src->buf_len;
+    void* resData[src->ANCOUNT];
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        resData[i] = 0;
-        urlFormat(src->ANS[i].RDATA, &resData[i], src->ANS[i].TYPE);
-        resData[i] = htonl(resData[i]);
+        resData[i] = malloc(getTypeSize(src->ANS[i].TYPE));
+        *len += getTypeSize(src->ANS[i].TYPE) + 12;
+        urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE);
     }
 
     /* Memory Allocated */
-    /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
-
-    *len = src->buf_len + src->ANCOUNT * 16;
     char* dest = (char*)malloc(*len + 1);
 
-    /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
 
     /* Set Basic Dest Info */
     memcpy(dest, src->req_buf, src->buf_len);
@@ -232,23 +227,31 @@ char* responseFormat(int* len, Packet* src)
     +-----------------------------------------------+
     */
     uint16_t ancount = htons(src->ANCOUNT);
-    memcpy(dest + 6, &ancount, sizeof(uint16_t));    /* Translate ANCOUNT */
+    memcpy(dest + 6, &ancount, sizeof(uint16_t));    /* Transform ANCOUNT */
 
     /* set data section */
+    int offset = 0;
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        char* dataPos = dest + (src->buf_len + (i * 16));
+        /* set offset */
+        char* dataPos = dest + (src->buf_len += offset);
+        offset = getTypeSize(src->ANS[i].TYPE) + 12;
+        
         Answer* pANS = &(src->ANS[i]);
+        /* transform origin data */
         uint16_t type = htons(pANS->TYPE);
         uint16_t class = htons(pANS->CLASS);
+        uint16_t dataLen = htons(pANS->RDLEN);
         uint32_t ttl = htonl(pANS->TTL);
-        memcpy(dataPos, &names[i], sizeof(uint16_t));         /* Set NAME poiner 16 Bits */
-        memcpy((dataPos + 2), &type, sizeof(uint16_t));      /* Set TYPE 16 Bits */
-        memcpy((dataPos + 4), &class, sizeof(uint16_t));      /* Set CLASS 16 Bits */
-        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));       /* Set TTL 32 Bits */
-        memcpy((dataPos + 12), &resData[i], pANS->RDLEN);         /* Set RDATA */
-        int dataLen = htons(pANS->RDLEN);
-        memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));   /* Set RDATA Length 16 Bits */
+
+        /* copy data to data buffer */
+        memcpy(dataPos, &names[i], sizeof(uint16_t));           // Set NAME poiner 16 Bits
+        memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE 16 Bits
+        memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS 16 Bits
+        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL 32 Bits
+        memcpy((dataPos + 12), resData[i], pANS->RDLEN);        // Set RDATA
+        memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
+        free(resData[i]);                                       // Free resData
     }
     return dest;
 
@@ -283,7 +286,7 @@ void packetCheck(Packet* src)
         GET_RA(src->FLAGS), GET_RCODE(src->FLAGS));
 
     /* Check COUNTS */
-    printf("   QDCOUNT= %d  ANCOUNT= %d\n", src->QDCOUNT, src->ANCOUNT);
+    printf("   QDCOUNT= %d  "BOLDMAGENTA"ANCOUNT= %d\n"RESET, src->QDCOUNT, src->ANCOUNT);
 
     /* Check Question Section */
     for(int i = 0; i < src->QDCOUNT; i++)
@@ -369,5 +372,37 @@ void bufferCheck(char* buf, int len)
         {
             printf("\n            ");
         }
+    }
+}
+
+
+
+/**
+ * @brief Get Url Parse Buffer Size
+ * 
+ * @param type query type (ipv4/ipv6...)
+ * @return size_t malloc buffer size
+ */
+size_t getBufferSize(uint16_t type){
+    switch(type){
+        case TYPE_A:    return 16;
+        case TYPE_AAAA: return 40;
+        default:        return 10;
+    }
+}
+
+
+
+/**
+ * @brief Get Type size on buffer
+ * 
+ * @param type query type
+ * @return size_t 
+ */
+size_t getTypeSize(uint16_t type){
+    switch(type){
+        case TYPE_A:    return 4;
+        case TYPE_AAAA: return 16;
+        default:        return 0;
     }
 }
