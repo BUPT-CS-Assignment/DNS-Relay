@@ -23,13 +23,13 @@
  */
 
 
-/**
- * @brief parse Packet
- *
- * @param buf package buffer pointer
- * @param len package buffer length
- * @return Packet* Packet pointer
- */
+ /**
+  * @brief parse Packet
+  *
+  * @param buf package buffer pointer
+  * @param len package buffer length
+  * @return Packet* Packet pointer
+  */
 Packet* packetParse(char* buf, int len)
 {
 
@@ -42,7 +42,8 @@ Packet* packetParse(char* buf, int len)
     dest->buf_len = len;
 
 
-    /* Parse Header Section
+    /* --------------------------------- Header Section ---------------------------------*/
+    /*
       0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                      ID                       |
@@ -66,8 +67,9 @@ Packet* packetParse(char* buf, int len)
     char* buf_pos = buf + 12;
 
 
-    /* Parse Question Section
-     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+    /* --------------------------------- Question Section ---------------------------------*/
+    /*
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     /                    QNAME                      /
     /                                               /
@@ -97,8 +99,9 @@ Packet* packetParse(char* buf, int len)
     if(dest->ANCOUNT == 0)    return dest;
 
 
-    /*Parse Answer Section
-      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+    /* --------------------------------- Answer Section ---------------------------------*/
+    /*
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                     NAME                      |
     +-----------------------------------------------+
@@ -138,9 +141,6 @@ Packet* packetParse(char* buf, int len)
 
 
 
-
-
-
 /**
  * @brief generate response package buffer
  *
@@ -151,7 +151,9 @@ Packet* packetParse(char* buf, int len)
 char* responseFormat(int* len, Packet* src)
 {
 
+    /* --------------------------------- Flag Section ---------------------------------*/
     /* Set Flags
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+-----------+--+--+--+--+--------+-----------+
     |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
     +--+-----------+--+--+--+--+--------+-----------+
@@ -168,26 +170,26 @@ char* responseFormat(int* len, Packet* src)
     }
     flag = ntohs(flag);
 
-    /* -----------------------------IMPROVE-REQUIRED-0-----------------------------------*/
+    /* --------------------------------- QName Pointer ---------------------------------*/
     /* Set Name-Pointer
-    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     | 1| 1|             QNAME Pointer               |
     +--+-----------+--+--+--+--+--------+-----------+
          ^ Pointer Recognize
     */
     uint16_t names[src->ANCOUNT];
-    names[0] = 0xc00c;  //Pos = 1100000000001100 
+    names[0] = 0xc00c;                  //pos = 1100000000001100 
     for(int i = 1; i < src->ANCOUNT; i++)
     {
-        names[i] = names[i - 1]  /* + strlen(src->QUESTS[i].QNAME) + 5 */;
+        names[i] = names[i - 1] + (strlen(src->QUESTS[i].QNAME) + 1) + 4;   //QNMAE(len + 1) + QTYPE(2) + QCLASS(2)
     }
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        names[i] = htons(names[i]);
+        names[i] = htons(names[i]);     //net transform
     }
 
-    /* -----------------------------IMPROVE-REQUIRED-0------------------------------------*/
+    /* --------------------------------- Answer Section ---------------------------------*/
 
     /* ResData Resolve */
     *len = src->buf_len;
@@ -209,7 +211,7 @@ char* responseFormat(int* len, Packet* src)
 
 
     /* Set Answer Section
-      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                     NAME                      |
     +-----------------------------------------------+
@@ -227,7 +229,7 @@ char* responseFormat(int* len, Packet* src)
     +-----------------------------------------------+
     */
     uint16_t ancount = htons(src->ANCOUNT);
-    memcpy(dest + 6, &ancount, sizeof(uint16_t));    /* Transform ANCOUNT */
+    memcpy(dest + 6, &ancount, sizeof(uint16_t));    // Transform ANCOUNT
 
     /* set data section */
     int offset = 0;
@@ -236,7 +238,7 @@ char* responseFormat(int* len, Packet* src)
         /* set offset */
         char* dataPos = dest + (src->buf_len += offset);
         offset = getTypeSize(src->ANS[i].TYPE) + 12;
-        
+
         Answer* pANS = &(src->ANS[i]);
         /* transform origin data */
         uint16_t type = htons(pANS->TYPE);
@@ -267,14 +269,9 @@ char* responseFormat(int* len, Packet* src)
  */
 void packetCheck(Packet* src)
 {
-    if(__DEBUG__ == DEBUG_L0)   return;
-
+    if(__DEBUG__ == DEBUG_L0 || src == NULL)   return;
     printf("> Packet Check\n");
-    if(src == NULL)
-    {
-        printf("<null-ptr>\n");
-        return;
-    }
+
     /* Origin Buffer Check */
     bufferCheck(src->req_buf, src->buf_len);
 
@@ -352,7 +349,7 @@ void bufferCheck(char* buf, int len)
 {
     if(buf == NULL || len <= 0)
     {
-        printf("<none buff>\n");
+        printf("<null-pointer>\n");
         return;
     }
     printf(" - Packet Length= %d\n", len);
@@ -379,15 +376,17 @@ void bufferCheck(char* buf, int len)
 
 /**
  * @brief Get Url Parse Buffer Size
- * 
+ *
  * @param type query type (ipv4/ipv6...)
  * @return size_t malloc buffer size
  */
-size_t getBufferSize(uint16_t type){
-    switch(type){
+size_t getBufferSize(uint16_t type)
+{
+    switch(type)
+    {
         case TYPE_A:    return 16;
         case TYPE_AAAA: return 40;
-        default:        return 10;
+        default:        return 0;
     }
 }
 
@@ -395,12 +394,14 @@ size_t getBufferSize(uint16_t type){
 
 /**
  * @brief Get Type size on buffer
- * 
+ *
  * @param type query type
- * @return size_t 
+ * @return size_t
  */
-size_t getTypeSize(uint16_t type){
-    switch(type){
+size_t getTypeSize(uint16_t type)
+{
+    switch(type)
+    {
         case TYPE_A:    return 4;
         case TYPE_AAAA: return 16;
         default:        return 0;

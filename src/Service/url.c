@@ -4,7 +4,7 @@
 
 /**
  * @brief url parse
- * 
+ *
  * @param src origin url pointer
  * @param dest parse result dest
  * @param mode parse mode
@@ -14,21 +14,22 @@ int urlParse(void* src, char* dest, int mode)
 {
     if(src == NULL || dest == NULL) return SOCKET_ERROR;
 
-    /* QNAME parse */
-    if(mode == TYPE_QNAME)
+    /* QNAME/CNAME parse */
+    if(mode == TYPE_QNAME || mode == TYPE_CNAME)
     {
-        return inetParse(AF_MAX,src,dest);
+        return inetParse(AF_MAX, src, dest);
     }
     /* IPv4 parse */
     if(mode == TYPE_A)
     {
-        return inetParse(AF_INET,src,dest);
+        return inetParse(AF_INET, src, dest);
     }
     /* IPv6 parse */
-    if(mode == TYPE_AAAA){
-        return inetParse(AF_INET6,src,dest);
+    if(mode == TYPE_AAAA)
+    {
+        return inetParse(AF_INET6, src, dest);
     }
-    
+
     return SOCKET_ERROR;
 
 }
@@ -37,7 +38,7 @@ int urlParse(void* src, char* dest, int mode)
 
 /**
  * @brief format url to internet form
- * 
+ *
  * @param url origin url string
  * @param dest format result dest
  * @param mode format mode
@@ -46,13 +47,22 @@ int urlParse(void* src, char* dest, int mode)
 int urlFormat(char* url, void* dest, int mode)
 {
     if(url == NULL || dest == NULL) return SOCKET_ERROR;
+
+    /* IPv4 format */
     if(mode == TYPE_A)
     {
-        return inetFormat(AF_INET,url,dest);      
+        return inetFormat(AF_INET, url, dest);
     }
-    if(mode == TYPE_AAAA){
-        return inetFormat(AF_INET6,url,dest);
+    /* IPv6 format */
+    if(mode == TYPE_AAAA)
+    {
+        return inetFormat(AF_INET6, url, dest);
+    }
+    /* CNAME format */
+    if(mode == TYPE_CNAME)
+    {
+        return inetFormat(AF_MAX, url, dest);
     }
     return SOCKET_ERROR;
-    
+
 }
