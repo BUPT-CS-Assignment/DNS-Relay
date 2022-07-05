@@ -1,10 +1,6 @@
 #ifndef __CONSOLE_H__
 #define __CONSOLE_H__
 
-#define DEBUG_L0 0
-#define DEBUG_L1 1
-#define DEBUG_L2 2
-
 #define RESET       "\033[0m"           /* Reset */
 #define BLACK       "\033[30m"          /* Black */
 #define RED         "\033[31m"          /* Red */

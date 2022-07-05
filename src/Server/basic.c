@@ -1,16 +1,12 @@
-#include <main.h>
 #include <map.h>
 #include <console.h>
 #include <server.h>
 
-typedef struct pthread_args
-{
-    char buf[BUFFER_SIZE];
-    Socket* server;
-    Socket connect;
-    int buf_len;
-}pthread_args;
-
+/**
+ * @brief Start dns_realy  server
+ *
+ * @param server Socket pointer
+ */
 void start(Socket* server)
 {
     if(server == NULL)
@@ -26,130 +22,129 @@ void start(Socket* server)
         exit(-1);
     }
 
-    consoleLog(DEBUG_L0, "> server start. debug level L%d\n",__DEBUG__);
+    consoleLog(DEBUG_L0, "> server start. debug level L%d\n", __DEBUG__);
 
-    pthread_t pt;
     int fromlen = sizeof(struct sockaddr_in);
+
+    fd_set fds;
+
     for(;;)
     {
-        /* wait for new connection */
-        pthread_args* pta = malloc(sizeof(pthread_args));
-        pta->server = server;
-        pta->buf_len = recvfrom(server->_fd, &pta->buf, BUFFER_SIZE, 0, (struct sockaddr*)&pta->connect._addr, &fromlen);
+        FD_ZERO(&fds);
+        FD_SET(server->_fd,&fds);
+        SOCKET ret = select(server->_fd+1,&fds,NULL,NULL,NULL);
+        if(ret <= 0){
+            continue;
+        }
+        if(FD_ISSET(server->_fd,&fds)){
+            /* udp wait for new connection */
+            thread_args* args = malloc(sizeof(thread_args));
+            args->server = server;
+            args->buf_len = recvfrom(server->_fd, args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
+
+            if(args->buf_len > 0)
+            {
+                threadCreate(connectHandle, args);
+            }
+            else
+            {
+                free(args);
+            }
+        }
         
-        if(pta->buf_len > 0)
-        {
-            /* new thread create */
-            pthread_create(&pt, NULL, connectHandle, (void*)pta);
-        }
-        else
-        {
-            free(pta);
-        }
     }
 
     /* close server */
     socketClose(server);
-    
+
 }
 
+
+/**
+ * @brief new connect thread handler
+ *
+ * @param param new thread param
+ * @return void*
+ */
 void* connectHandle(void* param)
 {
 
     /* thread params parse */
-    pthread_args* pta = (pthread_args*)param;
+    thread_args* args = (thread_args*)param;
 
-    Socket* server = pta->server;
-    Socket* from = &pta->connect;
+    Socket* server = args->server;      //dns-relay server
+    Socket* from = &args->connect;      //dns reqeust/response from
 
-    /* set timeout */
-    //setTimeOut(&client,10000,10000);
-
-    Packet* p = packetParse(pta->buf, pta->buf_len);
+    Packet* p = packetParse(args->buf, args->buf_len);
     if(p == NULL)
     {
-        free(pta);
-        pthread_exit(0);
+        free(args);
+        threadExit();
     }
 
-    /* check packet info */
-    packetCheck(p);
+    int ret;
 
     if(GET_QR(p->FLAGS) == 1)
     {
         /* recv from local dns server -- query result */
-        consoleLog(DEBUG_L0, "> recv from local dns\n");
-        uint16_t id = p->ID;
-        //memset(pta->buf, id, sizeof(uint16_t));
+        consoleLog(DEBUG_L0, BOLDCYAN"> recv query result\n");
+
+        /* check packet info */
+        packetCheck(p);
+
+        uint16_t origin;
+        struct sockaddr_in from;
 
         /* query addr */
-        struct sockaddr_in* client = queryMap(&AddrMAP, p->ID);
-        if(client != NULL)
+        if(queryMap(p->ID, &origin, &from) == 0)
         {
-            /* send back */
-            sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)client, sizeof(struct sockaddr_in));
-            free(client);
+            SET_ID(args->buf, &origin);
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&from, sizeof(from));
         }
     }
     else
     {
         /* recv from client -- query request */
-        int ret;
+        consoleLog(DEBUG_L0, BOLDBLUE"> recv query request\n");
+        /* check packet info */
+        packetCheck(p);
+
         if(urlQuery(p, RECORDS, R_NUM) == 0)    //no result from url table
         {
-            consoleLog(DEBUG_L0, "> query from local dns server\n");
-            /* query from local dns */
-            struct sockaddr_in dns_addr;
-
-            /* local dns server setting */
-            dns_addr.sin_addr.s_addr = LOCAL_DNS_ADDR;
-            dns_addr.sin_family = AF_INET;     //IPv4
-            dns_addr.sin_port = htons(53);     //Port
+            consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
 
             /* add to map */
-            //uint16_t id = !p->ID;
-            //memset(pta->buf, id, sizeof(uint16_t));
-            addToMap(&AddrMAP, p->ID, &pta->connect._addr);
-            mapCheck(&AddrMAP);
+            uint16_t converted = addToMap(p->ID,&args->connect._addr);
+            SET_ID(args->buf,&converted);
+
             /* send to dns server */
-            ret = sendto(server->_fd, pta->buf, pta->buf_len, 0, (struct sockaddr*)&dns_addr, sizeof(dns_addr));
+            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
 
         }
         else
         {
-            consoleLog(DEBUG_L0, "> query OK. send back\n");
-            //Re-Parse
-            //Packet *temp = packetParse(buf, len);
-            //packetCheck(temp);
-            
+            consoleLog(DEBUG_L0, BOLDGREEN"> query OK. send back\n");
+
             /* generate response package */
             int buff_len;
             char* buff = responseFormat(&buff_len, p);
-            
+
             /* send back to client */
-            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&pta->connect._addr, sizeof(pta->connect._addr));
+            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&args->connect._addr, sizeof(args->connect._addr));
             free(buff);
         }
-        if(ret != 0){
-            consoleLog(DEBUG_L0,"> send to server failed. code %d\n",
-#ifdef _WIN32
-            GetLastError()
-#else
-            errno
-#endif
-            );
-        }
+    }
+
+    if(ret < 0)
+    {
+        consoleLog(DEBUG_L0, BOLDRED"> send failed. code %d\n", ERROR_CODE);
     }
 
     /* mem free */
     packetFree(p);
-    free(pta);
-    
+    free(args);
+
     /* close socket */
-    socketClose(&pta->connect);
-
-    /* pthread exit */
-    pthread_exit(0);
-
+    socketClose(&args->connect);
 }
 

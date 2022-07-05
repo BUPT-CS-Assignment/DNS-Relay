@@ -1,103 +1,68 @@
 #include <server.h>
+#include <console.h>
+
 
 /**
- * @brief Url Parse
+ * @brief url parse
  *
- * @param void* src
- * @param char* dest
- * @param int mode
- * @return int
+ * @param src origin url pointer
+ * @param dest parse result dest
+ * @param mode parse mode
+ * @return int parse result (0:success)
  */
 int urlParse(void* src, char* dest, int mode)
 {
-    if(dest == NULL) return 0;
+    if(src == NULL || dest == NULL) return SOCKET_ERROR;
 
-    /* QNAME parse */
-    if(mode == TYPE_QNAME)
+    /* QNAME/CNAME parse */
+    if(mode == TYPE_QNAME || mode == TYPE_CNAME)
     {
-        int pos = 0;
-        while(((char*)src)[pos] != '\0')
-        {
-            /* length byte */
-            int len = ((char*)src)[pos];
-
-            /* read chars */
-            len = (len > 64 ? 64 : len);  //max length 64 bytes
-            for(int i = 0; i < len; i++)
-            {
-                dest[pos + i] = ((char*)src)[pos + i + 1];
-            }
-            dest[pos + len] = '.';  //add '.'
-            pos += (len + 1);       //pointer move
-        }
-        dest[pos - 1] = '\0';
+        return inetParse(AF_MAX, src, dest);
     }
     /* IPv4 parse */
-    else if(mode == TYPE_A)
+    if(mode == TYPE_A)
     {
-
-        char* temp = (char*)malloc(4);
-        char* pos = dest;
-        int len = 0;
-
-        /* uint32_t to char* */
-        for(int i = 0; i < 4; i++)
-        {
-
-#ifdef _WIN32
-            itoa(*(uint8_t*)src, temp, 10);
-#else
-            sprintf(temp, "%d", *(uint8_t*)src);
-#endif
-
-            int len = strlen(temp);
-            strcpy(pos, temp);
-            *(pos + len) = '.';
-            ++ src;
-            pos += (len + 1);
-        }
-        *(pos - 1) = '\0';
-        /* memory free */
-        free(temp);
-
+        return inetParse(AF_INET, src, dest);
     }
-    else
+    /* IPv6 parse */
+    if(mode == TYPE_AAAA)
     {
-        return 0;
+        return inetParse(AF_INET6, src, dest);
     }
-    return 1;
+
+    return SOCKET_ERROR;
+
 }
+
 
 
 /**
- * @brief Format Url to Chars
+ * @brief format url to internet form
  *
- * @param char* url
- * @param void* dest
- * @param int mode
- * @return int
+ * @param url origin url string
+ * @param dest format result dest
+ * @param mode format mode
+ * @return int format result code (0:success)
  */
 int urlFormat(char* url, void* dest, int mode)
 {
-    if(dest == NULL) return 0;
+    if(url == NULL || dest == NULL) return SOCKET_ERROR;
+
     /* IPv4 format */
     if(mode == TYPE_A)
     {
-        char temp[strlen(url) + 1];
-        strcpy(temp, url);
-        char* ptr = strtok(temp, ".");
-        for(int i = 0; i < 4; i++)
-        {
-            *(uint32_t*)dest |= (atoi(ptr) << ((3 - i) * 8));
-            ptr = strtok(NULL, ".");
-        }
-        return 1;
+        return inetFormat(AF_INET, url, dest);
     }
-    else
+    /* IPv6 format */
+    if(mode == TYPE_AAAA)
     {
-        return 0;
+        return inetFormat(AF_INET6, url, dest);
     }
+    /* CNAME format */
+    if(mode == TYPE_CNAME)
+    {
+        return inetFormat(AF_MAX, url, dest);
+    }
+    return SOCKET_ERROR;
+
 }
-
-
-

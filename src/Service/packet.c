@@ -24,15 +24,16 @@
 
 
  /**
-  * @brief Parse Packet
+  * @brief parse Packet
   *
-  * @param char* buf
-  * @param int len
-  * @return Packet* packet
+  * @param buf package buffer pointer
+  * @param len package buffer length
+  * @return Packet* Packet pointer
   */
-Packet *packetParse(char *buf, int len){
+Packet* packetParse(char* buf, int len)
+{
 
-    Packet *dest = (Packet *)malloc(sizeof(Packet));
+    Packet* dest = (Packet*)malloc(sizeof(Packet));
     memset(dest, 0, sizeof(Packet));
     dest->ANS = NULL;
 
@@ -41,7 +42,8 @@ Packet *packetParse(char *buf, int len){
     dest->buf_len = len;
 
 
-    /* Parse Header Section
+    /* --------------------------------- Header Section ---------------------------------*/
+    /*
       0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                      ID                       |
@@ -57,15 +59,17 @@ Packet *packetParse(char *buf, int len){
     |                    ARCOUNT                    |
     +-----------------------------------------------+
     */
-    memcpy(&dest->ID, buf, sizeof(uint16_t));
-    dest->FLAGS = ntohs(*((uint16_t *)(buf + 2)));
-    dest->QDCOUNT = ntohs(*((uint16_t *)(buf + 4)));
-    dest->ANCOUNT = ntohs(*(uint16_t *)(buf + 6));
-    char *buf_pos = buf + 12;
+    //memcpy(&dest->ID, buf, sizeof(uint16_t));
+    dest->ID = GET_ID(buf);
+    dest->FLAGS = ntohs(*((uint16_t*)(buf + 2)));
+    dest->QDCOUNT = ntohs(*((uint16_t*)(buf + 4)));
+    dest->ANCOUNT = ntohs(*(uint16_t*)(buf + 6));
+    char* buf_pos = buf + 12;
 
 
-    /* Parse Question Section
-     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+    /* --------------------------------- Question Section ---------------------------------*/
+    /*
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     /                    QNAME                      /
     /                                               /
@@ -75,27 +79,29 @@ Packet *packetParse(char *buf, int len){
     |                    QCLASS                     |
     +-----------------------------------------------+
     */
-    dest->QUESTS = (Quest *)malloc(sizeof(Quest) * dest->QDCOUNT);
-    for(int i = 0; i < dest->QDCOUNT; i++){
+    dest->QUESTS = (Quest*)malloc(sizeof(Quest) * dest->QDCOUNT);
+    for(int i = 0; i < dest->QDCOUNT; i++)
+    {
         /* read till '\0' */
         int q_len = strlen(buf_pos);
 
         /* QNAME　parse */
-        dest->QUESTS[i].QNAME = (char *)malloc(260);
+        dest->QUESTS[i].QNAME = (char*)malloc(64 + 1);
         urlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
 
         /* QTYPE parse */
         buf_pos += (q_len + 1);
-        dest->QUESTS[i].QTYPE = ntohs(*((uint16_t *)buf_pos));
-        dest->QUESTS[i].QCLASS = ntohs(*(uint16_t *)(buf_pos + 2));
+        dest->QUESTS[i].QTYPE = ntohs(*((uint16_t*)buf_pos));
+        dest->QUESTS[i].QCLASS = ntohs(*(uint16_t*)(buf_pos + 2));
         buf_pos += 4;
     }
 
     if(dest->ANCOUNT == 0)    return dest;
 
 
-    /*Parse Answer Section
-      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+    /* --------------------------------- Answer Section ---------------------------------*/
+    /*
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                     NAME                      |
     +-----------------------------------------------+
@@ -112,84 +118,88 @@ Packet *packetParse(char *buf, int len){
     /                                               /
     +-----------------------------------------------+
     */
-    dest->ANS = (Answer *)malloc(sizeof(Answer) * dest->ANCOUNT);
-    for(int i = 0; i < dest->ANCOUNT; i++){
+    dest->ANS = (Answer*)malloc(sizeof(Answer) * dest->ANCOUNT);
+    for(int i = 0; i < dest->ANCOUNT; i++)
+    {
         /* Set Basic Info */
-        dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t *)buf_pos));
-        dest->ANS[i].TYPE = ntohs(*(uint16_t *)(buf_pos + 2));
-        dest->ANS[i].CLASS = ntohs(*(uint16_t *)(buf_pos + 4));
-        dest->ANS[i].TTL = ntohl(*(uint32_t *)(buf_pos + 6));
+        dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t*)buf_pos));
+        dest->ANS[i].TYPE = ntohs(*(uint16_t*)(buf_pos + 2));
+        dest->ANS[i].CLASS = ntohs(*(uint16_t*)(buf_pos + 4));
+        dest->ANS[i].TTL = ntohl(*(uint32_t*)(buf_pos + 6));
 
         /* Set Resource Info*/
-        dest->ANS[i].RDLEN = ntohs(*(uint16_t *)(buf_pos + 10));
-        dest->ANS[i].RDATA = (char *)malloc(17);
-        urlParse(buf_pos + 12, dest->ANS[i].RDATA, TYPE_A);
+        dest->ANS[i].RDLEN = ntohs(*(uint16_t*)(buf_pos + 10));
+
+        /* Parse Url */
+        dest->ANS[i].RDATA = (char*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
+        urlParse(buf_pos + 12, dest->ANS[i].RDATA, dest->ANS[i].TYPE);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
     return dest;
 }
 
 
-/**
- * @brief Construct Response Packet Buffer
- *
- * @param int* len
- * @param Packet* src
- * @param char** url
- * @return char* buff
- */
-char *responseFormat(int *len, Packet *src){
 
+
+/**
+ * @brief generate response package buffer
+ *
+ * @param len buffer length pointer
+ * @param src Packet pointer
+ * @return char* response package buffer pointer
+ */
+char* responseFormat(int* len, Packet* src)
+{
+
+    /* --------------------------------- Flag Section ---------------------------------*/
     /* Set Flags
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+-----------+--+--+--+--+--------+-----------+
     |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
     +--+-----------+--+--+--+--+--------+-----------+
     */
     uint16_t flag = src->FLAGS;
-    SET_QR(flag);
-    SET_RD(flag);
+    SET_QR(flag);   SET_RD(flag);
 
     /* Answer Section */
-    if(src->ANCOUNT == 0){
+    if(src->ANCOUNT == 0)
+    {
         SET_AA(flag);
         SET_RCODE(flag, RCODE_NAME_ERROR);
     }
     flag = ntohs(flag);
 
-    /* -----------------------------IMPROVE-REQUIRED-0-----------------------------------*/
+    /* --------------------------------- QName Pointer ---------------------------------*/
     /* Set Name-Pointer
-    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     | 1| 1|             QNAME Pointer               |
     +--+-----------+--+--+--+--+--------+-----------+
          ^ Pointer Recognize
     */
     uint16_t names[src->ANCOUNT];
-    names[0] = 0xc00c;  //Pos = 1100000000001100 
-    for(int i = 1; i < src->ANCOUNT; i++){
-        names[i] = names[i - 1]  /* + strlen(src->QUESTS[i].QNAME) + 5 */ ;
-    }
-    for(int i = 0; i < src->ANCOUNT; i++){
-        names[i] = htons(names[i]);
+    names[0] = htons(0xc00c);           //pos = 1100000000001100 
+    for(int i = 1; i < src->ANCOUNT; i++)
+    {
+        names[i] = names[i - 1];
     }
 
-    /* -----------------------------IMPROVE-REQUIRED-0------------------------------------*/
+    /* --------------------------------- Answer Section ---------------------------------*/
 
     /* ResData Resolve */
-    uint32_t resData[src->ANCOUNT];
-    for(int i = 0; i < src->ANCOUNT; i++){
-        resData[i] = 0;
-        urlFormat(src->ANS[i].RDATA, &resData[i], src->ANS[i].TYPE);
-        resData[i] = htonl(resData[i]);
+    *len = src->buf_len;
+    void* resData[src->ANCOUNT];
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
+        resData[i] = malloc(TYPE_SIZE(src->ANS[i].TYPE));
+        *len += TYPE_SIZE(src->ANS[i].TYPE) + 12;
+        /* format transform & get length  */
+        src->ANS[i].RDLEN =(uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE);
     }
 
     /* Memory Allocated */
-    /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
+    char* dest = (char*)malloc(*len + 1);
 
-    *len = src->buf_len + src->ANCOUNT * 16;
-    char *dest = (char *)malloc(*len + 1);
-
-    /* -----------------------------IMPROVE-REQUIRED-1------------------------------------*/
 
     /* Set Basic Dest Info */
     memcpy(dest, src->req_buf, src->buf_len);
@@ -197,7 +207,7 @@ char *responseFormat(int *len, Packet *src){
 
 
     /* Set Answer Section
-      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+     0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
     |                     NAME                      |
     +-----------------------------------------------+
@@ -215,38 +225,49 @@ char *responseFormat(int *len, Packet *src){
     +-----------------------------------------------+
     */
     uint16_t ancount = htons(src->ANCOUNT);
-    memcpy(dest + 6, &ancount, sizeof(uint16_t));    /* Translate ANCOUNT */
+    memcpy(dest + 6, &ancount, sizeof(uint16_t));    // Transform ANCOUNT
 
     /* set data section */
-    for(int i = 0; i < src->ANCOUNT; i++){
-        char *dataPos = dest + (src->buf_len + (i * 16));
-        Answer *pANS = &(src->ANS[i]);
+    int offset = 0;
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
+        /* set offset */
+        char* dataPos = dest + (src->buf_len += offset);
+        offset = TYPE_SIZE(src->ANS[i].TYPE) + 12;
+
+        Answer* pANS = &(src->ANS[i]);
+        /* transform origin data */
         uint16_t type = htons(pANS->TYPE);
         uint16_t class = htons(pANS->CLASS);
+        uint16_t dataLen = htons(pANS->RDLEN);
         uint32_t ttl = htonl(pANS->TTL);
-        memcpy(dataPos, &names[i], sizeof(uint16_t));         /* Set NAME poiner 16 Bits */
-        memcpy((dataPos + 2), &type, sizeof(uint16_t));      /* Set TYPE 16 Bits */
-        memcpy((dataPos + 4), &class, sizeof(uint16_t));      /* Set CLASS 16 Bits */
-        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));       /* Set TTL 32 Bits */
-        memcpy((dataPos + 12), &resData[i], pANS->RDLEN);         /* Set RDATA */
-        int dataLen = htons(pANS->RDLEN);
-        memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));   /* Set RDATA Length 16 Bits */
+
+        /* copy data to data buffer */
+        memcpy(dataPos, &names[i], sizeof(uint16_t));           // Set NAME poiner 16 Bits
+        memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE 16 Bits
+        memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS 16 Bits
+        memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL 32 Bits
+        memcpy((dataPos + 12), resData[i], pANS->RDLEN);        // Set RDATA
+        memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
+        free(resData[i]);                                       // Free resData
     }
     return dest;
 
 }
 
 
+
+
 /**
- * @brief Check Packet Struct Info
+ * @brief check Packet infomation
  *
- * @param Packet* src
+ * @param src Packet pointer
  */
-void packetCheck(Packet *src){
+void packetCheck(Packet* src)
+{
+    if(__DEBUG__ == DEBUG_L0 || src == NULL)   return;
     printf("> Packet Check\n");
-    if(src == NULL){
-        printf("<null-ptr>\n");
-    }
+
     /* Origin Buffer Check */
     bufferCheck(src->req_buf, src->buf_len);
 
@@ -254,20 +275,25 @@ void packetCheck(Packet *src){
     printf(" - ID= %d\n", src->ID);
 
     /* Check FLAGS */
-    printf("   QR= %d  RD= %d  RA= %d  RCODE= %d\n", GET_QR(src->FLAGS), GET_RD(src->FLAGS),
+    printf("   "BOLDBLUE"QR= %d"RESET"  RD= %d  RA= %d  RCODE= %d\n", GET_QR(src->FLAGS), GET_RD(src->FLAGS),
         GET_RA(src->FLAGS), GET_RCODE(src->FLAGS));
 
     /* Check COUNTS */
-    printf("   QDCOUNT= %d  ANCOUNT= %d\n", src->QDCOUNT, src->ANCOUNT);
+    printf("   QDCOUNT= %d  ", src->QDCOUNT);
+    if(GET_QR(src->FLAGS) == 1) printf(BOLDMAGENTA);
+    printf("ANCOUNT= %d\n"RESET, src->ANCOUNT);
 
     /* Check Question Section */
-    for(int i = 0; i < src->QDCOUNT; i++){
+    for(int i = 0; i < src->QDCOUNT; i++)
+    {
         printf(" - QNAME(%d)= '%s'\n", i, src->QUESTS[i].QNAME);
-        printf("   QTYPE(%d)= %d  QCLASS(%d)= %d\n", i, src->QUESTS[i].QTYPE, i, src->QUESTS[i].QCLASS);
+        printf("   "BOLDMAGENTA"QTYPE(%d)= %d"RESET"  QCLASS(%d)= %d\n",
+            i, src->QUESTS[i].QTYPE, i, src->QUESTS[i].QCLASS);
     }
 
     /* Check Answer Section */
-    for(int i = 0; i < src->ANCOUNT; i++){
+    for(int i = 0; i < src->ANCOUNT; i++)
+    {
         printf(" - NAMEPTR(%d)= %d\n", i, src->ANS[i].NAME);
         printf("   TYPE(%d)= %d  CLASS(%d)= %d  TTL(%d)= %u\n", i, src->ANS[i].TYPE,
             i, src->ANS[i].CLASS, i, src->ANS[i].TTL);
@@ -277,23 +303,29 @@ void packetCheck(Packet *src){
 }
 
 
+
 /**
- * @brief Free Packet Memory
+ * @brief free Packet memory
  *
- * @param Packet* src
+ * @param src Packet pointer
  */
-void packetFree(Packet *src){
+void packetFree(Packet* src)
+{
     /* Free Question Section */
-    if(src->QUESTS != NULL){
-        for(int i = 0; i < src->QDCOUNT; i++){
+    if(src->QUESTS != NULL)
+    {
+        for(int i = 0; i < src->QDCOUNT; i++)
+        {
             free(src->QUESTS[i].QNAME);
         }
         free(src->QUESTS);
     }
 
     /* Free Answer Section */
-    if(src->ANS != NULL){
-        for(int i = 0; i < src->ANCOUNT; i++){
+    if(src->ANS != NULL)
+    {
+        for(int i = 0; i < src->ANCOUNT; i++)
+        {
             free(src->ANS[i].RDATA);
         }
         free(src->ANS);
@@ -305,26 +337,38 @@ void packetFree(Packet *src){
 }
 
 
+
 /**
- * @brief Check Packet Buffer Info
+ * @brief check package buffer infomation
  *
- * @param char* buf
- * @param int len
+ * @param buf package buffer pointer
+ * @param len package buffer length
  */
-void bufferCheck(char *buf, int len){
-    if(buf == NULL || len <= 0){
-        printf("<none buff>\n");
+void bufferCheck(char* buf, int len)
+{
+    if(buf == NULL || len <= 0)
+    {
+        printf("<null-pointer>\n");
         return;
     }
-    printf(" - Packet Length= %d\n   [Packet] ", len);
-    for(int i = 0; i < len; i++){
+    printf(" - Packet Length= %d\n", len);
+
+    if(__DEBUG__ < DEBUG_L2)    return;
+
+    printf("[   [Origin] ");
+    for(int i = 0; i < len; i++)
+    {
         /* Format Output */
         printf("%02X ", (unsigned char)buf[i]);
-        if(i == len - 1){
+        if(i == len - 1)
+        {
             printf("\n");
         }
-        else if(i > 0 && (i + 1) % 16 == 0){
+        else if(i > 0 && (i + 1) % 16 == 0)
+        {
             printf("\n            ");
         }
     }
 }
+
+

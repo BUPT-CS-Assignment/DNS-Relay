@@ -3,32 +3,26 @@
 
 #include "main.h"
 
-#define DEFAULT_MAP_LEN     128
-#define MAP_LEN_ADD         64
-
 #define MAP_FREE            0
 #define MAP_LOCK            1
-typedef struct MapNode
-{
-    uint16_t _id;
+
+#define MAX_MAP_SIZE        128
+#define MAP_TTL             10
+
+typedef struct MapNode{
+    uint16_t _origin;
     struct sockaddr_in _from;
-    struct MapNode* _pre;
-    struct MapNode* _next;
+    time_t _time_out;
+
 }MapNode;
 
-typedef struct AddrMap
-{
-    MapNode* _head;
-    size_t _len;
-    uint8_t _lock;
-}AddrMap;
+static MapNode _Map[MAX_MAP_SIZE];
+static int _map_allocator;
 
-extern AddrMap AddrMAP;
+void        mapInit();
+uint16_t    addToMap(uint16_t origin,struct sockaddr_in* addr);
+int         queryMap(uint16_t converted,uint16_t* origin,struct sockaddr_in* from);
+void        checkMap();
 
-/* Map Query */
-void MapInit(AddrMap* map);
-int addToMap(AddrMap* map, uint16_t id, struct sockaddr_in* addr);
-struct sockaddr_in*  queryMap(AddrMap* map,uint16_t id);
-void mapCheck(AddrMap* map);
 
 #endif

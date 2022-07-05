@@ -1,26 +1,24 @@
-#include <main.h>
 #include <console.h>
 #include <server.h>
-#pragma comment(lib,"Ws2_32.lib")
 
 int __DEBUG__ = 0;
+Socket _dns_server;
 
-int main(int argc,char* argv[]){
+int main(int argc, char* argv[])
+{
+    /* console args parse */
+    consoleParse(argc, argv);
+    printf("%d",TYPE_SIZE(TYPE_A));
+    /* dns-relay socket initialize */
+    Socket relay_service;
+    socketInit(&relay_service, DNS_RELAY_ADDR, 53);
 
-#ifdef _WIN32
-    WSADATA w;
-    WSAStartup(MAKEWORD(2,2),&w);
-#endif
+    /* local dns-server addr initialize. just for easy init. SOCKET not used*/
+    socketInit(&_dns_server, LOCAL_DNS_ADDR, 53);
 
-    /* arg parse */
-    consoleParse(argc,argv);
-    
-    /* server run */
-    Socket DNS;
-    socketInit(&DNS,SERVER_ADDR,53);
+    /* start dns-relay service */
+    start(&relay_service);
 
-    start(&DNS);
-    
 #ifdef _WIN32
     WSACleanup();
 #endif
@@ -28,3 +26,4 @@ int main(int argc,char* argv[]){
     system("pause");
     return 0;
 }
+
