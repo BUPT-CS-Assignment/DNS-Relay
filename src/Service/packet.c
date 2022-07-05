@@ -131,7 +131,7 @@ Packet* packetParse(char* buf, int len)
         dest->ANS[i].RDLEN = ntohs(*(uint16_t*)(buf_pos + 10));
 
         /* Parse Url */
-        dest->ANS[i].RDATA = (char*)malloc(getBufferSize(dest->ANS[i].TYPE));
+        dest->ANS[i].RDATA = (char*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
         urlParse(buf_pos + 12, dest->ANS[i].RDATA, dest->ANS[i].TYPE);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
@@ -159,8 +159,7 @@ char* responseFormat(int* len, Packet* src)
     +--+-----------+--+--+--+--+--------+-----------+
     */
     uint16_t flag = src->FLAGS;
-    SET_QR(flag);
-    SET_RD(flag);
+    SET_QR(flag);   SET_RD(flag);
 
     /* Answer Section */
     if(src->ANCOUNT == 0)
@@ -192,9 +191,10 @@ char* responseFormat(int* len, Packet* src)
     void* resData[src->ANCOUNT];
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        resData[i] = malloc(getTypeSize(src->ANS[i].TYPE));
-        *len += getTypeSize(src->ANS[i].TYPE) + 12;
-        urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE);
+        resData[i] = malloc(TYPE_SIZE(src->ANS[i].TYPE));
+        *len += TYPE_SIZE(src->ANS[i].TYPE) + 12;
+        /* format transform & get length  */
+        src->ANS[i].RDLEN =(uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE);
     }
 
     /* Memory Allocated */
@@ -233,7 +233,7 @@ char* responseFormat(int* len, Packet* src)
     {
         /* set offset */
         char* dataPos = dest + (src->buf_len += offset);
-        offset = getTypeSize(src->ANS[i].TYPE) + 12;
+        offset = TYPE_SIZE(src->ANS[i].TYPE) + 12;
 
         Answer* pANS = &(src->ANS[i]);
         /* transform origin data */
@@ -372,37 +372,3 @@ void bufferCheck(char* buf, int len)
 }
 
 
-
-/**
- * @brief Get Url Parse Buffer Size
- *
- * @param type query type (ipv4/ipv6...)
- * @return size_t malloc buffer size
- */
-size_t getBufferSize(uint16_t type)
-{
-    switch(type)
-    {
-        case TYPE_A:    return 16;
-        case TYPE_AAAA: return 40;
-        default:        return 0;
-    }
-}
-
-
-
-/**
- * @brief Get Type size on buffer
- *
- * @param type query type
- * @return size_t
- */
-size_t getTypeSize(uint16_t type)
-{
-    switch(type)
-    {
-        case TYPE_A:    return 4;
-        case TYPE_AAAA: return 16;
-        default:        return 0;
-    }
-}

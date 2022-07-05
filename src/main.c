@@ -1,4 +1,3 @@
-#include <main.h>
 #include <console.h>
 #include <server.h>
 
@@ -9,7 +8,7 @@ int main(int argc, char* argv[])
 {
     /* console args parse */
     consoleParse(argc, argv);
-
+    printf("%d",TYPE_SIZE(TYPE_A));
     /* dns-relay socket initialize */
     Socket relay_service;
     socketInit(&relay_service, DNS_RELAY_ADDR, 53);

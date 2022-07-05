@@ -1,4 +1,3 @@
-#include <main.h>
 #include <map.h>
 #include <console.h>
 #include <server.h>

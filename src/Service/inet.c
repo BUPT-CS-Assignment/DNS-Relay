@@ -1,6 +1,5 @@
 #include <main.h>
 #include <console.h>
-#include <server.h>
 
 
 /**
@@ -78,7 +77,7 @@ int inetParse(int af, void* url_src, char* dest)
  * @param af inet family
  * @param url_src url string source
  * @param dest url inet dest pointer
- * @return int format result (0:success)
+ * @return int format length
  */
 int inetFormat(int af, char* url_src, void* dest)
 {
@@ -92,13 +91,12 @@ int inetFormat(int af, char* url_src, void* dest)
         int len = sizeof(struct sockaddr_in);
         ret = WSAStringToAddress(url_src, AF_INET, NULL, (LPSOCKADDR)&temp, (LPINT)&len);
         memcpy(dest, &temp.sin_addr, 4);
-        if(ret != 0)    return ret;
+        if(ret != 0)    return 0;
 #else
         ret = inet_pton(AF_INET, url_src, dest);
-        if(ret == 0) return 1;
-        if(ret == -1) return -1;
+        if(ret != 1)    return 0;
 #endif
-        return 0;
+        return 4;
 
     }
 
@@ -111,13 +109,12 @@ int inetFormat(int af, char* url_src, void* dest)
         int len = sizeof(struct sockaddr_in6);
         ret = WSAStringToAddress(url_src, AF_INET6, NULL, (LPSOCKADDR)&temp, (LPINT)&len);
         memcpy(dest, &temp.sin6_addr, 16);
-        if(ret != 0)    return ret;
+        if(ret != 0)    return 0;
 #else
         ret = inet_pton(AF_INET6, url_src, dest);
-        if(ret == 0) return 1;
-        if(ret == -1) return -1;
+        if(ret != 1)    return 0;
 #endif
-        return 0;
+        return 16;
 
 }
 
@@ -143,5 +140,5 @@ int inetFormat(int af, char* url_src, void* dest)
         *(dest_pos - 1) = '\0';                           //set end (not necessary)
         return strlen(url_src) + 1;                     //return total len of format result
     }
-    return SOCKET_ERROR;
+    return 0;
 }

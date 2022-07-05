@@ -1,6 +1,4 @@
 #include <main.h>
-#include <server.h>
-#include <console.h>
 
 
 /**
@@ -17,7 +15,7 @@ void threadCreate(void*(*thread_handler)(void*) ,thread_args* args){
     HANDLE thread;
     thread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)thread_handler,args,0,NULL);
     if(thread == NULL){
-        consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",GetLastError());
+        printf("> thread create failed. code %d\n",GetLastError());
         free(args);
     }
     CloseHandle(thread);
@@ -29,7 +27,7 @@ void threadCreate(void*(*thread_handler)(void*) ,thread_args* args){
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
     int ret = pthread_create(&pt, &attr, connectHandle, (void*)args);
     if(ret != 0){
-        consoleLog(DEBUG_L0,RED"> thread create failed. code %d\n",ret);
+        printf("> thread create failed. code %d\n",ret);
         free(args);
     }
 #endif

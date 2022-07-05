@@ -35,8 +35,7 @@ int urlQuery(Packet *src, char ***records, int num){
             src->ANS[pos+j].TYPE = src->QUESTS[i].QTYPE;
             src->ANS[pos+j].CLASS = src->QUESTS[i].QCLASS;
             src->ANS[pos+j].TTL = 0x80;
-            src->ANS[pos+j].RDLEN = getTypeSize(src->ANS[pos+j].TYPE);
-            src->ANS[pos+j].RDATA = (char *)malloc(64 + 1);
+            src->ANS[pos+j].RDATA = (char *)malloc(TYPE_BUF_SIZE(src->QUESTS[i].QTYPE));
             strcpy(src->ANS[pos+j].RDATA, RECORDS[res[i][j]][1]);
         }
     }
