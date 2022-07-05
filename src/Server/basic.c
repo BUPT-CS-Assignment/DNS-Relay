@@ -27,21 +27,32 @@ void start(Socket* server)
 
     int fromlen = sizeof(struct sockaddr_in);
 
+    fd_set fds;
+
     for(;;)
     {
-        /* udp wait for new connection */
-        thread_args* args = malloc(sizeof(thread_args));
-        args->server = server;
-        args->buf_len = recvfrom(server->_fd, args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
+        FD_ZERO(&fds);
+        FD_SET(server->_fd,&fds);
+        SOCKET ret = select(server->_fd+1,&fds,NULL,NULL,NULL);
+        if(ret <= 0){
+            continue;
+        }
+        if(FD_ISSET(server->_fd,&fds)){
+            /* udp wait for new connection */
+            thread_args* args = malloc(sizeof(thread_args));
+            args->server = server;
+            args->buf_len = recvfrom(server->_fd, args->buf, BUFFER_SIZE, 0, (struct sockaddr*)&args->connect._addr, &fromlen);
 
-        if(args->buf_len > 0)
-        {
-            threadCreate(connectHandle, args);
+            if(args->buf_len > 0)
+            {
+                threadCreate(connectHandle, args);
+            }
+            else
+            {
+                free(args);
+            }
         }
-        else
-        {
-            free(args);
-        }
+        
     }
 
     /* close server */

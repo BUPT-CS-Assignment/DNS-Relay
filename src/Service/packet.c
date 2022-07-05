@@ -182,7 +182,7 @@ char* responseFormat(int* len, Packet* src)
     names[0] = htons(0xc00c);           //pos = 1100000000001100 
     for(int i = 1; i < src->ANCOUNT; i++)
     {
-        names[i] = names[i-1];
+        names[i] = names[i - 1];
     }
 
     /* --------------------------------- Answer Section ---------------------------------*/
@@ -275,17 +275,20 @@ void packetCheck(Packet* src)
     printf(" - ID= %d\n", src->ID);
 
     /* Check FLAGS */
-    printf("   QR= %d  RD= %d  RA= %d  RCODE= %d\n", GET_QR(src->FLAGS), GET_RD(src->FLAGS),
+    printf("   "BOLDBLUE"QR= %d"RESET"  RD= %d  RA= %d  RCODE= %d\n", GET_QR(src->FLAGS), GET_RD(src->FLAGS),
         GET_RA(src->FLAGS), GET_RCODE(src->FLAGS));
 
     /* Check COUNTS */
-    printf("   QDCOUNT= %d  "BOLDMAGENTA"ANCOUNT= %d\n"RESET, src->QDCOUNT, src->ANCOUNT);
+    printf("   QDCOUNT= %d  ", src->QDCOUNT);
+    if(GET_QR(src->FLAGS) == 1) printf(BOLDMAGENTA);
+    printf("ANCOUNT= %d\n"RESET, src->ANCOUNT);
 
     /* Check Question Section */
     for(int i = 0; i < src->QDCOUNT; i++)
     {
         printf(" - QNAME(%d)= '%s'\n", i, src->QUESTS[i].QNAME);
-        printf("   QTYPE(%d)= %d  QCLASS(%d)= %d\n", i, src->QUESTS[i].QTYPE, i, src->QUESTS[i].QCLASS);
+        printf("   "BOLDMAGENTA"QTYPE(%d)= %d"RESET"  QCLASS(%d)= %d\n",
+            i, src->QUESTS[i].QTYPE, i, src->QUESTS[i].QCLASS);
     }
 
     /* Check Answer Section */
