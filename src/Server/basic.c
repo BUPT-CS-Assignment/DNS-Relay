@@ -2,6 +2,8 @@
 #include <console.h>
 #include <server.h>
 
+
+
 /**
  * @brief Start dns_realy  server
  *
@@ -18,11 +20,12 @@ void start(Socket* server)
     /* bind port */
     if(bind(server->_fd, (struct sockaddr*)&server->_addr, sizeof(server->_addr)) < 0)
     {
-        consoleLog(DEBUG_L0, RED"> bind port %d failed\n", ntohs(server->_addr.sin_port));
+        consoleLog(DEBUG_L0, RED"> bind port %d failed. code %d\n", ntohs(server->_addr.sin_port),ERROR_CODE);
         exit(-1);
     }
 
-    consoleLog(DEBUG_L0, "> server start. debug level L%d\n", __DEBUG__);
+    consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
+    consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n",_local_dns_addr);
 
     int fromlen = sizeof(struct sockaddr_in);
 

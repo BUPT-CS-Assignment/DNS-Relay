@@ -4,14 +4,11 @@
 #include <main.h>
 #include <protocol.h>
 
-/************************************ Definitions ************************************/
+/*----------------------------------- Definitions -----------------------------------*/
 
+static char _local_dns_addr[64] = "114.114.114.114";
 
-#define DNS_RELAY_ADDR          INADDR_ANY
-#define LOCAL_DNS_ADDR          inet_addr("114.114.114.114")
-
-
-/********************************** Global Variables *********************************/
+/*-------------------------------- Global Variables ---------------------------------*/
 
 /* Static Records */
 static char* RECORDS[][2] = {
@@ -27,7 +24,7 @@ static int R_NUM = 6;   //Records Num
 extern Socket _dns_server;  //local dns server
 
 
-/************************************ Functions **************************************/
+/*----------------------------------- Functions ------------------------------------*/
 
 
 /* Socket Base */

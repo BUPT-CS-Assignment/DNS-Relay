@@ -1,4 +1,4 @@
-#include <main.h>
+#include <server.h>
 #include <console.h>
 #include <stdarg.h>
 
@@ -16,6 +16,9 @@ void consoleParse(int argc, char* argv[]){
             if(argv[1][2] == '2'){
                 __DEBUG__ = 2;
             }
+        }
+        if(argc > 2){
+            strcpy((char*)&_local_dns_addr,argv[2]);
         }
     }
 }

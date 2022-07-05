@@ -6,7 +6,7 @@
  * @brief Basic Socket Initialize
  * 
  * @param server    Socket struct pointer 
- * @param address   Socket sockaddr
+ * @param address   Socket sockaddr <- address (string)
  * @param port      Socket port
  * @return int      socket() return value
  */

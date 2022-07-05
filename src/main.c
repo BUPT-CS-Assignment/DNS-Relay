@@ -8,13 +8,13 @@ int main(int argc, char* argv[])
 {
     /* console args parse */
     consoleParse(argc, argv);
-    printf("%d",TYPE_SIZE(TYPE_A));
+
     /* dns-relay socket initialize */
     Socket relay_service;
-    socketInit(&relay_service, DNS_RELAY_ADDR, 53);
+    socketInit(&relay_service, INADDR_ANY , 53);
 
     /* local dns-server addr initialize. just for easy init. SOCKET not used*/
-    socketInit(&_dns_server, LOCAL_DNS_ADDR, 53);
+    socketInit(&_dns_server, inet_addr(_local_dns_addr), 53);
 
     /* start dns-relay service */
     start(&relay_service);
