@@ -23,7 +23,7 @@ int inetParse(int af, void* url_src, char* dest)
         int len = 16;                           //set length   
         temp.sin_family = af;                   //set address family
         memcpy(&temp.sin_addr.s_addr, url_src, sizeof(struct in_addr));   //copy to struct
-        ret = WSAAddressToString((LPSOCKADDR)&temp, sizeof(struct sockaddr_in), 0, dest, &len);
+        ret = WSAAddressToString((LPSOCKADDR)&temp, sizeof(struct sockaddr_in), 0, dest, (LPDWORD)&len);
 #else
         char* res = inet_ntop(AF_INET, url_src, dest, 16);
         if(res == NULL) ret = SOCKET_ERROR;
@@ -40,7 +40,7 @@ int inetParse(int af, void* url_src, char* dest)
         int len = 40;                           //set length
         temp.sin6_family = af;                  //set address family
         memcpy(&temp.sin6_addr.u, url_src, sizeof(struct in6_addr));      //copy to struct
-        ret = WSAAddressToString((LPSOCKADDR)&temp, sizeof(struct sockaddr_in6), 0, dest, &len);
+        ret = WSAAddressToString((LPSOCKADDR)&temp, sizeof(struct sockaddr_in6), 0, dest, (LPDWORD)&len);
 #else
         char* res = inet_ntop(AF_INET6, url_src, dest, 40);
         if(res == NULL) ret = SOCKET_ERROR;
@@ -90,7 +90,7 @@ int inetFormat(int af, char* url_src, void* dest)
 #ifdef _WIN32
         struct sockaddr_in temp;
         int len = sizeof(struct sockaddr_in);
-        ret = WSAStringToAddress(url_src, AF_INET, NULL, (LPSOCKADDR)&temp, &len);
+        ret = WSAStringToAddress(url_src, AF_INET, NULL, (LPSOCKADDR)&temp, (LPINT)&len);
         memcpy(dest, &temp.sin_addr, 4);
         if(ret != 0)    return ret;
 #else
@@ -109,7 +109,7 @@ int inetFormat(int af, char* url_src, void* dest)
 #ifdef _WIN32
         struct sockaddr_in6 temp;
         int len = sizeof(struct sockaddr_in6);
-        ret = WSAStringToAddress(url_src, AF_INET6, NULL, (LPSOCKADDR)&temp, &len);
+        ret = WSAStringToAddress(url_src, AF_INET6, NULL, (LPSOCKADDR)&temp, (LPINT)&len);
         memcpy(dest, &temp.sin6_addr, 16);
         if(ret != 0)    return ret;
 #else

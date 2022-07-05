@@ -179,14 +179,10 @@ char* responseFormat(int* len, Packet* src)
          ^ Pointer Recognize
     */
     uint16_t names[src->ANCOUNT];
-    names[0] = 0xc00c;                  //pos = 1100000000001100 
+    names[0] = htons(0xc00c);           //pos = 1100000000001100 
     for(int i = 1; i < src->ANCOUNT; i++)
     {
-        names[i] = names[i - 1] + (strlen(src->QUESTS[i].QNAME) + 1) + 4;   //QNMAE(len + 1) + QTYPE(2) + QCLASS(2)
-    }
-    for(int i = 0; i < src->ANCOUNT; i++)
-    {
-        names[i] = htons(names[i]);     //net transform
+        names[i] = names[i-1];
     }
 
     /* --------------------------------- Answer Section ---------------------------------*/
