@@ -49,7 +49,7 @@ int main() {
     printf("ip:%s\n", entry->ip);
     printf("type:%d\n\n",entry->type);
   }
-  mylist_rotate_node(&b.node, &head);
+  mylist_rotate_node_head(&b.node, &head);
   mylist_for_each(p, &head, DNS_entry) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s\n", entry->domain_name);
