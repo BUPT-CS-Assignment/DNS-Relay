@@ -1,4 +1,5 @@
 #include "cache.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -34,13 +35,13 @@ int LRU_cache_free(LRU_cache *cache) {
  * @param {LRU_cache} *
  * @param {DNS_entry*} query 要查询的含有对应域名及类型的条文
  * @param {DNS_entry*} result
- * 查询到的所有条文，为动态分配的指针，对应的字符串均被深拷贝过，释放靠上层
+ * 查询到的所有条文，为动态分配的指针，对应的字符串未被深拷贝过，释放靠上层
  * @return {*} 返回值为查询到符合的条文数量
  */
-int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result) {
+int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
   int count = 0;
-  result = (DNS_entry *)malloc(sizeof(DNS_entry[LRU_CACHE_LENGTH]));
-  DNS_entry *temp[LRU_CACHE_LENGTH];
+  *result = (DNS_entry *)malloc(sizeof(DNS_entry[MAX_FOUND]));
+  DNS_entry *temp[MAX_FOUND];
   mylist_head *p;
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
@@ -50,21 +51,26 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result) {
       cache->length--;
     } else if (strcmp(entry->domain_name, query->domain_name) == 0) {
       if (entry->type == query->type) {
-        result[count].domain_name = (char *)malloc(sizeof(entry->domain_name));
-        memcpy(result[count].domain_name, entry->domain_name,
-               strlen(entry->domain_name) + 1);
-        result[count].ip = (char *)malloc(sizeof(entry->ip));
-        memcpy(result[count].ip, entry->ip, strlen(entry->ip) + 1);
-        result[count].type = entry->type;
-        temp[count]=entry;
+        if (count >= MAX_FOUND) {
+          break;
+        }
+        (*result)[count].domain_name = entry->domain_name;
+        (*result)[count].ip = entry->ip;
+        (*result)[count].type = entry->type;
+        (*result)[count].timestamp = entry->timestamp;
+        temp[count] = entry;
         count++;
       }
     }
   }
   for (int i = 0; i < count; i++) {
-     mylist_rotate_node_head(&temp[i]->node, &cache->head);
-  }
+    printf("in func dn:%s--", (*result)[i].domain_name);
+    printf("in func ip:%s--", (*result)[i].ip);
+    printf("in func type:%d\n\n", (*result)[i].type);
 
+    mylist_rotate_node_head(&temp[i]->node, &cache->head);
+  }
+  printf("pointer:%d\n", *result);
   return count;
 }
 
