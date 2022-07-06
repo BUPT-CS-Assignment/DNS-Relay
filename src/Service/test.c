@@ -10,23 +10,7 @@ static char *RECORDS[][2] = {
     {"noui.cloud", "101.43.201.20"},       {"unique.com", "220.177.198.124"}};
 int main() {
   LRU_cache *cache;
-  cache = (LRU_cache *)malloc(sizeof(LRU_cache));
-  INIT_MY_LIST_HEAD(&cache->head);
-  cache->length = 0;
-
-  // printf("cache in main:%d\n", cache);
-  // printf("head prev:%d\n", cache->head.prev);
-  // printf("head next:%d\n", cache->head.next);
-  // if (cache->head.next == &cache->head) {
-  //   printf("head back linked\n");
-  // } else {
-  //   printf("head back not linked\n");
-  // }
-  // if (cache->head.prev == &cache->head) {
-  //   printf("head front linked\n");
-  // } else {
-  //   printf("head front not linked\n");
-  // }
+  LRU_cache_init(&cache);
 
   DNS_entry a;
   a.domain_name = (char *)malloc(BUF_SIZE);
@@ -69,6 +53,8 @@ int main() {
   memcpy(&f.domain_name, &RECORDS[5][0], sizeof(RECORDS[5][0]));
   memcpy(&f.ip, &RECORDS[5][1], sizeof(RECORDS[5][1]));
   f.type = TYPE_A;
+
+  
   LRU_entry_add(&cache, &a);
   LRU_entry_add(&cache, &b);
   LRU_entry_add(&cache, &c);

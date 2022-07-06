@@ -7,13 +7,12 @@
  * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
  * @return {*}
  */
-// int LRU_cache_init(LRU_cache **cptr) {
-//   LRU_cache* cache=*cptr;
-//   cache = (LRU_cache *)malloc(sizeof(LRU_cache));
-//   INIT_MY_LIST_HEAD(&cache->head);
-//   cache->length = 0;
-//   return LRU_OP_SUCCESS;
-// }
+int LRU_cache_init(LRU_cache **cptr) {
+  *cptr= (LRU_cache *)malloc(sizeof(LRU_cache));
+  INIT_MY_LIST_HEAD(&(*cptr)->head);
+  (*cptr)->length = 0;
+  return LRU_OP_SUCCESS;
+}
 
 /**
  * @description: 析构缓存单元，释放动态分配好的内存
@@ -88,6 +87,7 @@ int LRU_entry_add(LRU_cache **cptr, DNS_entry *entry) {
     //printf("tail->dn:%s\n",tail->domain_name);
     if (mylist_is_last(&tail->node, &cache->head)) {
       __LRU_list_del(&cache, tail);
+      free(tail->domain_name);
       __LRU_list_add(&cache, entry, tail);
 
     }
