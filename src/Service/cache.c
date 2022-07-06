@@ -40,6 +40,7 @@ int LRU_cache_free(LRU_cache *cache) {
 int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result) {
   int count = 0;
   result = (DNS_entry *)malloc(sizeof(DNS_entry[LRU_CACHE_LENGTH]));
+  DNS_entry *temp[LRU_CACHE_LENGTH];
   mylist_head *p;
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
@@ -55,11 +56,15 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result) {
         result[count].ip = (char *)malloc(sizeof(entry->ip));
         memcpy(result[count].ip, entry->ip, strlen(entry->ip) + 1);
         result[count].type = entry->type;
+        temp[count]=entry;
         count++;
-        mylist_rotate_node_head(&entry->node, &cache->head);
       }
     }
   }
+  for (int i = 0; i < count; i++) {
+     mylist_rotate_node_head(&temp[i]->node, &cache->head);
+  }
+
   return count;
 }
 
