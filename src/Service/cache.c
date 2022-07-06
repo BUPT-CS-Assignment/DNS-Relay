@@ -1,6 +1,7 @@
 #include "cache.h"
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /**
  * @description: 初始化缓存单元，动态分配内存
@@ -42,7 +43,11 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result) {
   mylist_head *p;
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
-    if (strcmp(entry->domain_name, query->domain_name) == 0) {
+    time_t current_time = time(NULL);
+    if (current_time - entry->timestamp > CACHE_TTL) {
+      __LRU_list_del(cache, entry);
+      cache->length--;
+    } else if (strcmp(entry->domain_name, query->domain_name) == 0) {
       if (entry->type == query->type) {
         result[count].domain_name = (char *)malloc(sizeof(entry->domain_name));
         memcpy(result[count].domain_name, entry->domain_name,
@@ -95,6 +100,7 @@ int __LRU_list_del(LRU_cache *cache, DNS_entry *entry) {
  * @return {*}
  */
 int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
+  entry->timestamp = time(NULL); //会自动记录时间
   if (cache->length <
       LRU_CACHE_LENGTH) { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
     __LRU_list_add(cache, entry, &cache->list[cache->length]);
