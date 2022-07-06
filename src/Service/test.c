@@ -54,7 +54,6 @@ int main() {
   memcpy(&f.ip, &RECORDS[5][1], sizeof(RECORDS[5][1]));
   f.type = TYPE_A;
 
-  
   LRU_entry_add(&cache, &a);
   LRU_entry_add(&cache, &b);
   LRU_entry_add(&cache, &c);
@@ -91,6 +90,6 @@ int main() {
     printf("ip:%s--", entry->ip);
     printf("type:%d\n\n", entry->type);
   }
-
+  LRU_cache_free(&cache);
   return 0;
 }

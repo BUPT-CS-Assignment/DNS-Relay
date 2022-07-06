@@ -25,6 +25,16 @@ static char *RECORDS[][2] = {
 int main() {
   mylist_head head;
   INIT_MY_LIST_HEAD(&head);
+  if (head.next == &head) {
+    printf("head back linked\n");
+  } else {
+    printf("head back not linked\n");
+  }
+  if (head.prev == &head) {
+    printf("head front linked\n");
+  } else {
+    printf("head front not linked\n");
+  }
   DNS_entry a;
   a.domain_name = RECORDS[0][0];
   a.ip = RECORDS[0][1];
@@ -43,21 +53,21 @@ int main() {
   mylist_add_tail(&c.node, &head);
 
   mylist_head *p;
-  mylist_for_each(p, &head,DNS_entry) {
+  mylist_for_each(p, &head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s\n", entry->domain_name);
     printf("ip:%s\n", entry->ip);
-    printf("type:%d\n\n",entry->type);
+    printf("type:%d\n\n", entry->type);
   }
   mylist_rotate_node_head(&b.node, &head);
-  mylist_for_each(p, &head, DNS_entry) {
+  mylist_for_each(p, &head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s\n", entry->domain_name);
     printf("ip:%s\n", entry->ip);
     printf("type:%d\n\n", entry->type);
   }
   mylist_del(&c.node);
-  mylist_for_each(p, &head, DNS_entry) {
+  mylist_for_each(p, &head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s\n", entry->domain_name);
     printf("ip:%s\n", entry->ip);
