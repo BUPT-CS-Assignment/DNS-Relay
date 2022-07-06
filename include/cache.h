@@ -1,5 +1,8 @@
 #include "list.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define TYPE_A 1 // IPV4
 #define TYPE_NS 2
@@ -14,20 +17,22 @@
 /**
  * @description:查找表条目的基本数据结构
  */
-typedef struct {
-  char *domain_name; //域名
-  char *ip;          //字符串形式的IP地址
-  uint8_t type;      // IP地址类型
-  mylist_head node;
+typedef struct
+{
+    char* domain_name; //域名
+    char* ip;          //字符串形式的IP地址
+    uint8_t type;      // IP地址类型
+    mylist_head node;
 } DNS_entry;
 
 /**
  * @description: LRU缓存的基本数据结构，LRU现在是大小固定，位置相邻的
  */
-typedef struct {
-  DNS_entry list[LRU_CACHE_LENGTH];
-  mylist_head head;
-  int length;
+typedef struct
+{
+    DNS_entry list[LRU_CACHE_LENGTH];
+    mylist_head head;
+    int length;
 } LRU_cache;
 
 /*函数声明部分*/

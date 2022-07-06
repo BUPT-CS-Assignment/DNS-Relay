@@ -3,8 +3,9 @@
 /**
  * @description: 模仿Linux中list_head实现的双向链表，用于查找
  */
-typedef struct list_head {
-  struct list_head *next, *prev;
+typedef struct list_head
+{
+    struct list_head* next, * prev;
 } mylist_head;
 #define MY_LIST_HEAD_INIT(name)                                                \
   { &(name), &name }
@@ -28,10 +29,10 @@ typedef struct list_head {
 //     (type *)((char *)_mptr - offsetof(type, member));                          \
 //   })
 
-/**
- * @description: container_of的弱化版，失去了内核编程的严谨性以回避typeof
- * @return {*}
- */
+  /**
+   * @description: container_of的弱化版，失去了内核编程的严谨性以回避typeof
+   * @return {*}
+   */
 #define mylist_entry(ptr, type, member)                                        \
   ({ (type *)((char *)ptr - offsetof(type, member)); })
 
@@ -42,17 +43,19 @@ typedef struct list_head {
 #define mylist_for_each(pos, head)                                       \
   for (pos = (head)->next; pos != (head); pos = pos->next)
 
-static inline void INIT_MY_LIST_HEAD(mylist_head *list) {
-  list->next = list;
-  list->prev = list;
+static inline void INIT_MY_LIST_HEAD(mylist_head* list)
+{
+    list->next = list;
+    list->prev = list;
 }
 
-static inline void _mylist_add(mylist_head *_new, mylist_head *prev,
-                               mylist_head *next) {
-  next->prev = _new;
-  _new->next = next;
-  _new->prev = prev;
-  prev->next = _new;
+static inline void _mylist_add(mylist_head* _new, mylist_head* prev,
+    mylist_head* next)
+{
+    next->prev = _new;
+    _new->next = next;
+    _new->prev = prev;
+    prev->next = _new;
 }
 
 /**
@@ -61,8 +64,9 @@ static inline void _mylist_add(mylist_head *_new, mylist_head *prev,
  * @param {mylist_head} *head 该链表的头节点
  * @return {*}
  */
-static inline void mylist_add_head(mylist_head *_new, mylist_head *head) {
-  _mylist_add(_new, head, head->next);
+static inline void mylist_add_head(mylist_head* _new, mylist_head* head)
+{
+    _mylist_add(_new, head, head->next);
 }
 
 /**
@@ -71,13 +75,15 @@ static inline void mylist_add_head(mylist_head *_new, mylist_head *head) {
  * @param {mylist_head} *head 链表的头节点
  * @return {*}
  */
-static inline void mylist_add_tail(mylist_head *_new, mylist_head *head) {
-  _mylist_add(_new, head->prev, head);
+static inline void mylist_add_tail(mylist_head* _new, mylist_head* head)
+{
+    _mylist_add(_new, head->prev, head);
 }
 
-static inline void _mylist_del(mylist_head *prev, mylist_head *next) {
-  next->prev = prev;
-  prev->next = next;
+static inline void _mylist_del(mylist_head* prev, mylist_head* next)
+{
+    next->prev = prev;
+    prev->next = next;
 }
 
 /**
@@ -85,11 +91,12 @@ static inline void _mylist_del(mylist_head *prev, mylist_head *next) {
  * @param {mylist_head} *entry 要被删除的某节点接口
  * @return {*}
  */
-static inline void mylist_del(mylist_head *entry) {
-  _mylist_del(entry->prev, entry->next);
+static inline void mylist_del(mylist_head* entry)
+{
+    _mylist_del(entry->prev, entry->next);
 
-  entry->next = NULL;
-  entry->prev = NULL;
+    entry->next = NULL;
+    entry->prev = NULL;
 }
 
 /**
@@ -97,10 +104,11 @@ static inline void mylist_del(mylist_head *entry) {
  * @param {mylist_head} *entry 要被删除的某节点接口
  * @return {*}
  */
-static inline void mylist_del_init(mylist_head *entry) {
-  _mylist_del(entry->prev, entry->next);
+static inline void mylist_del_init(mylist_head* entry)
+{
+    _mylist_del(entry->prev, entry->next);
 
-  INIT_MY_LIST_HEAD(entry);
+    INIT_MY_LIST_HEAD(entry);
 }
 
 /**
@@ -109,11 +117,12 @@ static inline void mylist_del_init(mylist_head *entry) {
  * @param {mylist_head} *_new 新节点
  * @return {*}
  */
-static inline void mylist_replace(mylist_head *old, mylist_head *_new) {
-  _new->next = old->next;
-  _new->next->prev = _new;
-  _new->prev = old->prev;
-  _new->prev->next = _new;
+static inline void mylist_replace(mylist_head* old, mylist_head* _new)
+{
+    _new->next = old->next;
+    _new->next->prev = _new;
+    _new->prev = old->prev;
+    _new->prev->next = _new;
 }
 
 /**
@@ -122,9 +131,10 @@ static inline void mylist_replace(mylist_head *old, mylist_head *_new) {
  * @param {mylist_head} *head
  * @return {*}
  */
-static inline void mylist_move_head(mylist_head *list, mylist_head *head) {
-  _mylist_del(list->prev, list->next);
-  mylist_add_head(list, head);
+static inline void mylist_move_head(mylist_head* list, mylist_head* head)
+{
+    _mylist_del(list->prev, list->next);
+    mylist_add_head(list, head);
 }
 
 /**
@@ -133,9 +143,10 @@ static inline void mylist_move_head(mylist_head *list, mylist_head *head) {
  * @param {mylist_head} *head
  * @return {*}
  */
-static inline void mylist_move_tail(mylist_head *list, mylist_head *head) {
-  _mylist_del(list->prev, list->next);
-  mylist_add_tail(list, head);
+static inline void mylist_move_tail(mylist_head* list, mylist_head* head)
+{
+    _mylist_del(list->prev, list->next);
+    mylist_add_tail(list, head);
 }
 
 /**
@@ -144,18 +155,20 @@ static inline void mylist_move_tail(mylist_head *list, mylist_head *head) {
  * @param {mylist_head} *_new 新节点
  * @return {*}
  */
-static inline void mylist_replace_init(mylist_head *old, mylist_head *_new) {
-  mylist_replace(old, _new);
+static inline void mylist_replace_init(mylist_head* old, mylist_head* _new)
+{
+    mylist_replace(old, _new);
 
-  INIT_MY_LIST_HEAD(old);
+    INIT_MY_LIST_HEAD(old);
 }
 
 /**
  * @description: 检验某节点entry是否为链表head的最后一个节点
  * @return {*}
  */
-static inline int mylist_is_last(mylist_head *entry, const mylist_head *head) {
-  return entry->next == head;
+static inline int mylist_is_last(mylist_head* entry, const mylist_head* head)
+{
+    return entry->next == head;
 }
 
 /**
@@ -163,9 +176,10 @@ static inline int mylist_is_last(mylist_head *entry, const mylist_head *head) {
  * @param {mylist_head} *head
  * @return {*}
  */
-static inline int mylist_empty(const mylist_head *head) {
-  mylist_head *next = head->next;
-  return (next == head) && (next == head->prev);
+static inline int mylist_empty(const mylist_head* head)
+{
+    mylist_head* next = head->next;
+    return (next == head) && (next == head->prev);
 }
 
 /**
@@ -175,11 +189,13 @@ static inline int mylist_empty(const mylist_head *head) {
  * @param {mylist_head} *head 链表头节点
  * @return {*}
  */
-static inline void mylist_rotate_node_head(mylist_head *node,
-                                           mylist_head *head) {
-  if (!mylist_empty(head)) {
-    mylist_move_head(node, head);
-  }
+static inline void mylist_rotate_node_head(mylist_head* node,
+    mylist_head* head)
+{
+    if(!mylist_empty(head))
+    {
+        mylist_move_head(node, head);
+    }
 }
 /**
  * @description:
@@ -188,9 +204,11 @@ static inline void mylist_rotate_node_head(mylist_head *node,
  * @param {mylist_head} *head 链表头节点
  * @return {*}
  */
-static inline void mylist_rotate_node_tail(mylist_head *node,
-                                           mylist_head *head) {
-  if (!mylist_empty(head)) {
-    mylist_move_tail(node, head);
-  }
+static inline void mylist_rotate_node_tail(mylist_head* node,
+    mylist_head* head)
+{
+    if(!mylist_empty(head))
+    {
+        mylist_move_tail(node, head);
+    }
 }

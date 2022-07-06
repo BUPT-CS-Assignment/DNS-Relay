@@ -1,6 +1,4 @@
 #include "cache.h"
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,8 +40,7 @@ DNS_entry *__LRU_list_find(LRU_cache **cptr, const char *domain_name) {
     if (strcmp(entry->domain_name, domain_name) == 0) {
       return entry;
     }
-  }
-  return NULL;
+    return NULL;
 }
 
 /**
@@ -58,7 +55,7 @@ int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location) {
   memcpy(location, entry, sizeof(DNS_entry));
   mylist_add_head(&location->node, &cache->head);
 
-  return LRU_OP_SUCCESS;
+    return LRU_OP_SUCCESS;
 }
 int __LRU_list_del(LRU_cache **cptr, DNS_entry *entry) {
   LRU_cache *cache = *cptr;
