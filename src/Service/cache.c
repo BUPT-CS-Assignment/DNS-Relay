@@ -70,7 +70,7 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
 
     mylist_rotate_node_head(&temp[i]->node, &cache->head);
   }
-  printf("pointer:%d\n", *result);
+//  printf("pointer:%d\n", *result);
   return count;
 }
 

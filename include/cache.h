@@ -13,6 +13,7 @@
 #define LRU_OP_SUCCESS 0
 #define LRU_OP_FAILED 1
 
+#define MAX_FOUND 4
 #define CACHE_TTL 313 //以秒为单位
 /**
  * @description:查找表条目的基本数据结构
@@ -40,4 +41,4 @@ int LRU_cache_free(LRU_cache *cache);
 int __LRU_list_add(LRU_cache *cache, DNS_entry *entry, DNS_entry *location);
 int __LRU_list_del(LRU_cache *cache, DNS_entry *entry);
 int LRU_entry_add(LRU_cache *cache, DNS_entry *entry);
-int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result);
+int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result);
