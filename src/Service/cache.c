@@ -40,7 +40,8 @@ DNS_entry *__LRU_list_find(LRU_cache **cptr, const char *domain_name) {
     if (strcmp(entry->domain_name, domain_name) == 0) {
       return entry;
     }
-    return NULL;
+  }
+  return NULL;
 }
 
 /**
@@ -57,6 +58,12 @@ int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location) {
 
     return LRU_OP_SUCCESS;
 }
+/**
+ * @description: 删除链表中的指定一个节点，为内部使用的函数
+ * @param {LRU_cache} *
+ * @param {DNS_entry} *entry
+ * @return {*}
+ */
 int __LRU_list_del(LRU_cache **cptr, DNS_entry *entry) {
   LRU_cache *cache = *cptr;
   mylist_del_init(&entry->node);

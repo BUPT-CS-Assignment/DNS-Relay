@@ -89,6 +89,7 @@ int main() {
   }
 
   LRU_entry_add(&cache, &e);
+  printf("length:%d\n", cache->length);
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s--", entry->domain_name);
@@ -97,15 +98,13 @@ int main() {
   }
 
   LRU_entry_add(&cache, &f);
-
+  printf("length:%d\n", cache->length);
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
     printf("dn:%s--", entry->domain_name);
     printf("ip:%s--", entry->ip);
     printf("type:%d\n\n", entry->type);
   }
-
-  printf("length:%d\n", cache->length);
 
   return 0;
 }
