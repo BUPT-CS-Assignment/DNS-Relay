@@ -31,6 +31,7 @@ typedef struct {
 } LRU_cache;
 
 /*函数声明部分*/
+int DNS_entry_set(DNS_entry* ptr,char* name,char* ip,uint8_t type);
 int LRU_cache_init(LRU_cache** cptr);
 int LRU_cache_free(LRU_cache*);
 int __LRU_list_add(LRU_cache*, DNS_entry* entry, DNS_entry* location);

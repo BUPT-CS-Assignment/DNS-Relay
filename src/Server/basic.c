@@ -30,6 +30,15 @@ void start(Socket* server)
         exit(-1);
     }
 
+/*******************************  TEST  **********************************/
+    DNS_entry temp;
+    DNS_entry_set(&temp,"baidu.com","1.2.3.4",TYPE_A);
+    LRU_entry_add(_url_cache,&temp);
+    printf("result: %d\n",LRU_cache_find(_url_cache,&temp));
+    
+    return;
+/*******************************  TEST  **********************************/
+
     consoleLog(DEBUG_L0,BOLDWHITE"> cache service start. cache size: %d\n",_url_cache->length);
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
     consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n",_local_dns_addr);

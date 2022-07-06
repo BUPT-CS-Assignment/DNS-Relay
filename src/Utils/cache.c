@@ -1,6 +1,21 @@
 #include "cache.h"
 
 
+int DNS_entry_set(DNS_entry* ptr,char* name,char* ip,uint8_t type){
+    if(ptr == NULL) return -1;
+    if(name != NULL){
+        ptr->domain_name = (char*)malloc(strlen(name) + 1);
+        strcpy(ptr->domain_name,name);
+    }
+    if(ip != NULL){
+        ptr->ip = (char*)malloc(strlen(ip) + 1);
+        strcpy(ptr->ip,ip);
+    }
+    ptr->type = type;
+    return 0;
+}
+
+
 /**
  * @description: 初始化缓存单元，动态分配内存
  * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
@@ -87,7 +102,7 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
     if(cache->length <
         LRU_CACHE_LENGTH)
     { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
-        __LRU_list_add(&cache, entry, &cache->list[cache->length]);
+        __LRU_list_add(cache, entry, &cache->list[cache->length]);
         cache->length++;
     }
     else
@@ -96,9 +111,9 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
         //printf("tail->dn:%s\n",tail->domain_name);
         if(mylist_is_last(&tail->node, &cache->head))
         {
-            __LRU_list_del(&cache, tail);
+            __LRU_list_del(cache, tail);
             free(tail->domain_name);
-            __LRU_list_add(&cache, entry, tail);
+            __LRU_list_add(cache, entry, tail);
 
         }
     }
@@ -115,7 +130,7 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
  */
 int LRU_cache_find(LRU_cache * cache, DNS_entry * entry)
 {
-    DNS_entry* temp = __LRU_list_find(&cache, entry->domain_name);
+    DNS_entry* temp = __LRU_list_find(cache, entry->domain_name);
     if(temp == NULL)
     {
         return LRU_OP_FAILED;
