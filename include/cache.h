@@ -11,7 +11,7 @@
 #define TYPE_TXT 16
 #define TYPE_AAAA 28 // IPV6
 
-#define LRU_CACHE_LENGTH 16
+#define LRU_CACHE_LENGTH 4
 #define LRU_OP_SUCCESS 0
 #define LRU_OP_FAILED 1
 /**
@@ -36,9 +36,9 @@ typedef struct
 } LRU_cache;
 
 /*函数声明部分*/
-int LRU_cache_init(LRU_cache* cache);
-int LRU_cache_free(LRU_cache* cache);
-int __LRU_list_add(LRU_cache* cache, DNS_entry* entry, DNS_entry* location);
-DNS_entry* __LRU_list_find(LRU_cache* cache, const char* domain_name);
-int LRU_entry_add(LRU_cache* cache, DNS_entry* entry);
-int LRU_cache_find(LRU_cache* cache, DNS_entry* entry);
+//int LRU_cache_init(LRU_cache **cptr);
+int LRU_cache_free(LRU_cache **cptr);
+int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location);
+DNS_entry *__LRU_list_find(LRU_cache **cptr, const char *domain_name);
+int LRU_entry_add(LRU_cache **cptr, DNS_entry *entry);
+int LRU_cache_find(LRU_cache **cptr, DNS_entry *entry);
