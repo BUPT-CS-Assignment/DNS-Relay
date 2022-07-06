@@ -31,8 +31,8 @@ typedef struct {
 } LRU_cache;
 
 /*函数声明部分*/
-int LRU_cache_init(LRU_cache **cptr);
-int LRU_cache_free(LRU_cache **cptr);
-int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location);
-int LRU_entry_add(LRU_cache **cptr, DNS_entry *entry);
-int LRU_cache_find(LRU_cache **cptr, DNS_entry *query, DNS_entry *result);
+int LRU_cache_init(LRU_cache *cache);
+int LRU_cache_free(LRU_cache *cache);
+int __LRU_list_add(LRU_cache *cache, DNS_entry *entry, DNS_entry *location);
+int LRU_entry_add(LRU_cache *cache, DNS_entry *entry);
+int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry *result);
