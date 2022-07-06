@@ -11,6 +11,8 @@
 #define LRU_CACHE_LENGTH 4
 #define LRU_OP_SUCCESS 0
 #define LRU_OP_FAILED 1
+
+#define CACHE_TTL 313//以秒为单位
 /**
  * @description:查找表条目的基本数据结构
  */
@@ -31,7 +33,7 @@ typedef struct {
 } LRU_cache;
 
 /*函数声明部分*/
-int LRU_cache_init(LRU_cache *cache);
+int LRU_cache_init(LRU_cache **cptr);
 int LRU_cache_free(LRU_cache *cache);
 int __LRU_list_add(LRU_cache *cache, DNS_entry *entry, DNS_entry *location);
 int LRU_entry_add(LRU_cache *cache, DNS_entry *entry);

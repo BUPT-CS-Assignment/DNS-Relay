@@ -7,10 +7,10 @@
  * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
  * @return {*}
  */
-int LRU_cache_init(LRU_cache *cache) {
-  cache = (LRU_cache *)malloc(sizeof(LRU_cache));
-  INIT_MY_LIST_HEAD(&(cache)->head);
-  (cache)->length = 0;
+int LRU_cache_init(LRU_cache **cptr) {
+  *cptr = (LRU_cache *)malloc(sizeof(LRU_cache));
+  INIT_MY_LIST_HEAD(&(*cptr)->head);
+  (*cptr)->length = 0;
   return LRU_OP_SUCCESS;
 }
 
