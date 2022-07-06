@@ -16,18 +16,18 @@ typedef struct list_head
  * @return ( (size_t) & ((entry*)p))-> node);
  * 即返回p的成员node的地址，因p为0地址，表现为从0地址开始算偏移量
  */
- /**
-  * @description:
-  * @param ptr：所求结构体中list_head成员的地址
-  * @param offsetof(member)：求list_head成员距离结构体的偏移量
-  * @return
-  * 以字节为单位的两者相减值，即结构体首地址，实现由结构体成员地址求结构体地址
-  */
-  // #define container_of(ptr, type, member)                                        \
-  //   ({                                                                           \
-  //     const typeof(((type *)0)->member) *_mptr = (ptr);                          \
-  //     (type *)((char *)_mptr - offsetof(type, member));                          \
-  //   })
+/**
+ * @description:给出结构体首地址
+ * @param ptr：所求结构体中list_head成员的地址
+ * @param offsetof(member)：求list_head成员距离结构体的偏移量
+ * @return
+ * 以字节为单位的两者相减值，即结构体首地址，实现由结构体成员地址求结构体地址
+ */
+// #define container_of(ptr, type, member)                                        \
+//   ({                                                                           \
+//     const typeof(((type *)0)->member) *_mptr = (ptr);                          \
+//     (type *)((char *)_mptr - offsetof(type, member));                          \
+//   })
 
   /**
    * @description: container_of的弱化版，失去了内核编程的严谨性以回避typeof
@@ -36,11 +36,11 @@ typedef struct list_head
 #define mylist_entry(ptr, type, member)                                        \
   ({ (type *)((char *)ptr - offsetof(type, member)); })
 
-   /**
-    * @description: 从头到尾遍历
-    * @return {*}
-    */
-#define mylist_for_each(pos, head, type)                                       \
+/**
+ * @description: 从头到尾遍历
+ * @return {*}
+ */
+#define mylist_for_each(pos, head)                                       \
   for (pos = (head)->next; pos != (head); pos = pos->next)
 
 static inline void INIT_MY_LIST_HEAD(mylist_head* list)
@@ -181,6 +181,7 @@ static inline int mylist_empty(const mylist_head* head)
     mylist_head* next = head->next;
     return (next == head) && (next == head->prev);
 }
+
 /**
  * @description:
  * 把某一指定节点旋转至链表的最前，使用时应注意node属于head对应的链表
@@ -196,7 +197,6 @@ static inline void mylist_rotate_node_head(mylist_head* node,
         mylist_move_head(node, head);
     }
 }
-
 /**
  * @description:
  * 把某一指定节点旋转至链表的最后，使用时应注意node属于head对应的链表
