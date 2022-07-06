@@ -34,6 +34,5 @@ typedef struct {
 int LRU_cache_init(LRU_cache **cptr);
 int LRU_cache_free(LRU_cache **cptr);
 int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location);
-DNS_entry *__LRU_list_find(LRU_cache **cptr, const char *domain_name);
 int LRU_entry_add(LRU_cache **cptr, DNS_entry *entry);
-int LRU_cache_find(LRU_cache **cptr, DNS_entry *entry);
+int LRU_cache_find(LRU_cache **cptr, DNS_entry *query, DNS_entry *result);
