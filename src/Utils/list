@@ -1,6 +1,5 @@
-#include "list.h"
-#include <stdint.h>
-#include <stdio.h>
+#include <list.h>
+#include <main.h>
 /**
  * @description:查找表条目的基本数据结构
  */

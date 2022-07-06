@@ -3,6 +3,7 @@
 
 #include <main.h>
 #include <protocol.h>
+#include <cache.h>
 
 /*----------------------------------- Definitions -----------------------------------*/
 
@@ -22,6 +23,7 @@ static char* RECORDS[][2] = {
 static int R_NUM = 6;   //Records Num
 
 extern Socket _dns_server;  //local dns server
+extern LRU_cache* _url_cache;
 
 
 /*----------------------------------- Functions ------------------------------------*/

@@ -1,8 +1,5 @@
-#include "list.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <list.h>
+#include <main.h>
 
 #define TYPE_A 1 // IPV4
 #define TYPE_NS 2
@@ -36,9 +33,9 @@ typedef struct
 } LRU_cache;
 
 /*函数声明部分*/
-//int LRU_cache_init(LRU_cache **cptr);
-int LRU_cache_free(LRU_cache **cptr);
-int __LRU_list_add(LRU_cache **cptr, DNS_entry *entry, DNS_entry *location);
-DNS_entry *__LRU_list_find(LRU_cache **cptr, const char *domain_name);
-int LRU_entry_add(LRU_cache **cptr, DNS_entry *entry);
-int LRU_cache_find(LRU_cache **cptr, DNS_entry *entry);
+int LRU_cache_init(LRU_cache** cptr);
+int LRU_cache_free(LRU_cache*);
+int __LRU_list_add(LRU_cache*, DNS_entry* entry, DNS_entry* location);
+DNS_entry* __LRU_list_find(LRU_cache*, const char* domain_name);
+int LRU_entry_add(LRU_cache*, DNS_entry*);
+int LRU_cache_find(LRU_cache*, DNS_entry*);
