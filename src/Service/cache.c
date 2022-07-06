@@ -6,11 +6,11 @@
  * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
  * @return {*}
  */
-int LRU_cache_init(LRU_cache** cache)
+int LRU_cache_init(LRU_cache** cptr)
 {
-    *cache = (LRU_cache*)malloc(sizeof(LRU_cache));
-    INIT_MY_LIST_HEAD(&(*cache)->head);
-    (*cache)->length = 0;
+    *cptr = (LRU_cache*)malloc(sizeof(LRU_cache));
+    INIT_MY_LIST_HEAD(&(*cptr)->head);
+    (*cptr)->length = 0;
     return LRU_OP_SUCCESS;
 }
 
@@ -42,6 +42,7 @@ DNS_entry* __LRU_list_find(LRU_cache* cache, const char* domain_name)
             return entry;
         }
     }
+
     return NULL;
 }
 
@@ -59,6 +60,15 @@ int __LRU_list_add(LRU_cache* cache, DNS_entry* entry, DNS_entry* location)
 
     return LRU_OP_SUCCESS;
 }
+
+
+
+/**
+ * @description: 删除链表中的指定一个节点，为内部使用的函数
+ * @param {LRU_cache} *
+ * @param {DNS_entry} *entry
+ * @return {*}
+ */
 int __LRU_list_del(LRU_cache* cache, DNS_entry* entry)
 {
     mylist_del_init(&entry->node);
@@ -87,10 +97,10 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
         if(mylist_is_last(&tail->node, &cache->head))
         {
             __LRU_list_del(&cache, tail);
+            free(tail->domain_name);
             __LRU_list_add(&cache, entry, tail);
 
         }
-
     }
     return LRU_OP_SUCCESS;
 }
@@ -103,7 +113,7 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
  * 如果查到，该条文变量里面会有查到的ip、类型等参数
  * @return {*} 返回值为int，通过检查返回值可知缓存是否查到该域名
  */
-int LRU_cache_find(LRU_cache* cache, DNS_entry* entry)
+int LRU_cache_find(LRU_cache * cache, DNS_entry * entry)
 {
     DNS_entry* temp = __LRU_list_find(&cache, entry->domain_name);
     if(temp == NULL)
