@@ -1,24 +1,9 @@
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-
 #include "hash.h"
-
 
 /* -----------------GENERIC Hash Node Implement----------------- */
 /** 
  * @brief use void* to generalize
  */
-typedef struct hash_node {
-	void* key;
-	void* value;
-
-	size_t key_s;
-	size_t val_s;
-
-	struct hash_node *next;
-} hash_node;
-
 static hash_node* make_node(
 	const void* _key , size_t _k_len ,
 	void* _value 	 , size_t _v_len ) 
@@ -70,15 +55,6 @@ static void cat_node(hash_node* prev ,hash_node* nxtv )
  * @brief  It based on single link and Read-Write lock to 
  * 		   guarantee Thead-Safety
  */
-typedef struct {
-	pthread_rwlock_t rwlock;
-
- 	hash_node *head , *tail;
-
-	size_t bk_s;
-
-} hash_bucket;
-
 static void make_bucket(hash_bucket* bk) 
 {
 	pthread_rwlock_init(&bk->rwlock , NULL);
@@ -235,10 +211,6 @@ static uint32_t fnv32(const char* str , size_t len) {
 
 const size_t HASH_MASK = BUCKET_SIZE - 1;
 
-struct string_hash {
-	hash_bucket bks[BUCKET_SIZE];
-};
-
 void init_hash(struct string_hash* map) 
 {
 	for(size_t i = 0 ; i < BUCKET_SIZE ; i++) 
@@ -306,33 +278,3 @@ void count_hash(struct string_hash* map)
 	
 }
 
-int main () {
-	FILE* fp = fopen("dnsrelay.txt" , "r");
-	
-	hash* mapped = (hash*)malloc(sizeof(hash));
-	init_hash(mapped);
-	
-	char buffer[512];
-	while (fgets(buffer , sizeof buffer , fp) && !feof(fp)) {
-
-		if(buffer[0] =='\n') continue;
-		
-		char* val = strtok(buffer , " " );
-		char* key = strtok(NULL   , "\n");
-	
-		//puts(key); puts(val);
-		int flag = insert_hash(mapped , key , val , strlen(val));
-	}
-	count_hash(mapped);
-	
-	memset(buffer , 0 , sizeof buffer);
-	if (query_hash(mapped , "www.bupt.cn" , buffer , sizeof buffer) == SUCCUSS)
-		printf("ans is : %s\n" , buffer);
-	
-	const char ips[] = "0.0.0.0/1.1.1.1";
-	modify_hash(mapped , "www.bupt.cn" , ips , strlen(ips) );
-	if (query_hash(mapped , "www.bupt.cn" , buffer , sizeof buffer) == SUCCUSS)
-		printf("ans is : %s\n" , buffer);	
-	fclose(fp);
-	return 0;
-}
