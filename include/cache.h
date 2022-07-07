@@ -1,6 +1,5 @@
 #include "list.h"
-#include <stdint.h>
-#include <time.h>
+#include "main.h"
 
 #define TYPE_A 1 // IPV4
 #define TYPE_NS 2
