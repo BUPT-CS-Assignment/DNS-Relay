@@ -104,19 +104,23 @@ static int insert_bucket(hash_bucket* bk , hash_node* node)
 	pthread_rwlock_unlock(&bk->rwlock);
 	return SUCCUSS;
 }
-/* [[dispatched]]
+
 
 static int remove_bucket(
 	hash_bucket* bk , 
-	void* key , size_t k_len) 
+	const void* key , size_t k_len) 
 {
 	pthread_rwlock_wrlock(&bk->rwlock);
 
-	if (bk->bk_s == 1 && KEY_MATCH(bk->head , key , k_len) ){
+	if (KEY_MATCH(bk->head , key , k_len) ){
+		
+		hash_node* prev = bk->head;
+		bk->head = bk->head->next;
+		free_node(prev);
+		
+		if(!(--bk->bk_s)) 
+		   bk->tail = NULL;
 
-		free_node(bk->head);
-		bk->head = bk->tail = NULL;
-		bk->bk_s = 0;
 
 		pthread_rwlock_unlock(&bk->rwlock);
 		return SUCCUSS;
@@ -129,6 +133,9 @@ static int remove_bucket(
 			
 			cat_node(prev , now->next);
 			bk->bk_s--;
+			
+			if (bk->tail == now)
+				bk->tail = prev;
 
 			pthread_rwlock_unlock(&bk->rwlock);
 			return SUCCUSS;
@@ -137,9 +144,9 @@ static int remove_bucket(
 	}
 
 	pthread_rwlock_unlock(&bk->rwlock);
-	return SUCCUSS;
+	return FAILURE;
 }
-*/
+
 
 static int query_bucket(
 	hash_bucket* bk , 
@@ -217,12 +224,18 @@ void init_hash(struct string_hash* map)
 		make_bucket(&map->bks[i]);
 }
 
+void free_hash(struct string_hash* map)
+{
+	for(size_t i = 0 ; i < BUCKET_SIZE ; i++) 
+		free_bucket(&map->bks[i]);	
+}
+
 int insert_hash(
 	struct string_hash* map ,
 	const char* key ,
 	void* value , size_t v_len)
 {
-	size_t k_len = strlen(key);
+	size_t k_len = STRMEM(key);
 	size_t bk_id = fnv32(key , k_len) & HASH_MASK;
 
 	return insert_bucket(&map->bks[bk_id] , make_node(
@@ -232,12 +245,22 @@ int insert_hash(
 
 }
 
+int remove_hash(
+	struct string_hash* map ,
+	const char* key)
+{
+	size_t k_len = STRMEM(key);
+	size_t bk_id = fnv32(key , k_len) & HASH_MASK;
+	
+	return remove_bucket(&map->bks[bk_id] , key , k_len);
+}
+
 int query_hash(
 	struct string_hash* map ,
 	const char* key ,
 	void* ret , size_t r_len)
 {
-	size_t k_len = strlen(key);
+	size_t k_len = STRMEM(key);
 	size_t bk_id = fnv32(key , k_len) & HASH_MASK;
 
 	hash_node __ret;
@@ -245,7 +268,7 @@ int query_hash(
 	int flag = query_bucket(&map->bks[bk_id] , &__ret , key , k_len);
 	
 	if (flag == SUCCUSS)
-		memcpy(ret , __ret.value , __ret.val_s);
+		memcpy(ret ,  __ret.value , __ret.val_s);
 
 	return flag;
 }
@@ -255,7 +278,7 @@ int modify_hash(
 	const char* key ,
 	void* value , size_t v_len)
 {
-	size_t k_len = strlen(key);
+	size_t k_len = STRMEM(key);
 	size_t bk_id = fnv32(key , k_len) & HASH_MASK;
 
 	return modify_bucket(&map->bks[bk_id],
