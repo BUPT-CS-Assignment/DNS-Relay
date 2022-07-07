@@ -96,7 +96,8 @@ typedef struct Answer
     uint16_t    CLASS;
     uint16_t    RDLEN;
     uint32_t    TTL;
-    char*       RDATA;
+    uint16_t    ADDITION;
+    uint8_t*       RDATA;
 
 }Answer;
 

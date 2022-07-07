@@ -46,14 +46,14 @@ int     qnameSearch(char *src,int type,int *res, char ***records, int urls_num);
 
 
 /* Packet Handle */
-Packet* packetParse(char* buf, int len);
+Packet* packetParse(uint8_t* buf, int len);
 char*   responseFormat(int* len, Packet*);
 void    packetFree(Packet*);
 
 
 /* Url Resolve */
-int     urlFormat(char* src, void* dest, int mode);
-int     urlParse(void* src, char* dest, int mode);
+int     urlFormat(char* url, void* dest, int mode, char* name, uint16_t pointer, uint16_t addition);
+int     urlParse(void* src, char* dest, void* addtion,int mode, uint16_t len, uint8_t* buf);
 
 
 /* Packet Check */

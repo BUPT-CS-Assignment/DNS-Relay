@@ -30,7 +30,7 @@
   * @param len package buffer length
   * @return Packet* Packet pointer
   */
-Packet* packetParse(char* buf, int len)
+Packet* packetParse(uint8_t* buf, int len)
 {
 
     Packet* dest = (Packet*)malloc(sizeof(Packet));
@@ -87,7 +87,7 @@ Packet* packetParse(char* buf, int len)
 
         /* QNAME　parse */
         dest->QUESTS[i].QNAME = (char*)malloc(64 + 1);
-        urlParse(buf_pos, dest->QUESTS[i].QNAME, TYPE_QNAME);
+        urlParse(buf_pos, dest->QUESTS[i].QNAME, NULL, TYPE_QNAME,0, NULL);
 
         /* QTYPE parse */
         buf_pos += (q_len + 1);
@@ -131,8 +131,9 @@ Packet* packetParse(char* buf, int len)
         dest->ANS[i].RDLEN = ntohs(*(uint16_t*)(buf_pos + 10));
 
         /* Parse Url */
-        dest->ANS[i].RDATA = (char*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
-        urlParse(buf_pos + 12, dest->ANS[i].RDATA, dest->ANS[i].TYPE);
+        dest->ANS[i].RDATA = (uint8_t*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
+        urlParse(buf_pos + 12, dest->ANS[i].RDATA, &dest->ANS[i].ADDITION,
+                                dest->ANS[i].TYPE, dest->ANS[i].RDLEN, buf);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
     return dest;
@@ -182,10 +183,11 @@ char* responseFormat(int* len, Packet* src)
     for(int i = 0; i < src->ANCOUNT; i++)
     {
         p_offset = 0xc00c;      //pos = 1100000000001100 
-        for(int j = 0; j < i; j++){
+        for(int j = 0; j < i; j++)
+        {
             p_offset += strlen(src->QUESTS[src->ANS[j].QPOS].QNAME) + 1 + 4; //QNAME + QTYPE(2) + QCLASS(2)
         }
-        names[i] = htons(p_offset);
+        //names[i] = htons(p_offset);
     }
 
     /* --------------------------------- Answer Section ---------------------------------*/
@@ -198,7 +200,8 @@ char* responseFormat(int* len, Packet* src)
         resData[i] = malloc(TYPE_SIZE(src->ANS[i].TYPE));
         *len += TYPE_SIZE(src->ANS[i].TYPE) + 12;
         /* format transform & get length  */
-        src->ANS[i].RDLEN =(uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE);
+        src->ANS[i].RDLEN = (uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE,
+            src->req_buf + src->ANS[i].NAME, names[i], src->ANS[i].ADDITION);
     }
 
     /* Memory Allocated */
@@ -241,13 +244,14 @@ char* responseFormat(int* len, Packet* src)
 
         Answer* pANS = &(src->ANS[i]);
         /* transform origin data */
+        uint16_t name_ptr = htons(names[i]);
         uint16_t type = htons(pANS->TYPE);
         uint16_t class = htons(pANS->CLASS);
         uint16_t dataLen = htons(pANS->RDLEN);
         uint32_t ttl = htonl(pANS->TTL);
 
         /* copy data to data buffer */
-        memcpy(dataPos, &names[i], sizeof(uint16_t));           // Set NAME poiner  16 Bits
+        memcpy(dataPos, &name_ptr, sizeof(uint16_t));           // Set NAME poiner  16 Bits
         memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE         16 Bits
         memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS        16 Bits
         memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL          32 Bits
@@ -299,9 +303,14 @@ void packetCheck(Packet* src)
     for(int i = 0; i < src->ANCOUNT; i++)
     {
         printf(" - NAMEPTR(%d)= %d\n", i, src->ANS[i].NAME);
-        printf("   TYPE(%d)= %d  CLASS(%d)= %d  TTL(%d)= %u\n", i, src->ANS[i].TYPE,
+        printf("   TYPE(%d)= %d  CLASS(%d)= %d  TTL(%d)= %d\n", i, src->ANS[i].TYPE,
             i, src->ANS[i].CLASS, i, src->ANS[i].TTL);
-        printf("   RDLEN(%d)= %d  RDATA(%d)= '%s'\n", i, src->ANS[i].RDLEN, i, src->ANS[i].RDATA);
+        printf("   RDLEN(%d)= %d  RDATA(%d)= '%s'", i, src->ANS[i].RDLEN, i, src->ANS[i].RDATA);
+        if(src->ANS[i].TYPE == TYPE_MX)
+        {
+            printf("  PREF(%d)= %d", i,src->ANS[i].ADDITION);
+        }
+        printf("\n");
     }
     printf("> Check End\n");
 }

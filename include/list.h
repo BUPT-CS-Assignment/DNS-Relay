@@ -185,7 +185,7 @@ static inline int mylist_empty(const mylist_head* head)
 /**
  * @description:
  * 把某一指定节点旋转至链表的最前，使用时应注意node属于head对应的链表
- * @param {mylist_head} *node 要被至于最后的节点
+ * @param {mylist_head} *node 要被至于最前的节点
  * @param {mylist_head} *head 链表头节点
  * @return {*}
  */
