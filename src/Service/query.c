@@ -57,7 +57,7 @@ int urlQuery(Packet* src)
             src->ANS[pos + j].RDATA = (char*)malloc(TYPE_BUF_SIZE(src->QUESTS[i].QTYPE));
             strcpy(src->ANS[pos + j].RDATA, result[j].ip);
             DNS_entry_free(&result[j]);
-            //free(&result[j]);   
+
         }
         free(result);
     }

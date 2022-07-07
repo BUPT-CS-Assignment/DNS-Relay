@@ -196,14 +196,15 @@ char* responseFormat(int* len, Packet* src)
 
     /* ResData Resolve */
     *len = src->buf_len;
-    void* resData[src->ANCOUNT];
+    uint8_t resData[255];
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        resData[i] = malloc(TYPE_SIZE(src->ANS[i].TYPE));
         /* format transform & get length  */
         char* origin_name = src->QUESTS[src->ANS[i].QPOS].QNAME;
-        src->ANS[i].RDLEN = (uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE,
+        src->ANS[i].RDLEN = (uint16_t)urlFormat(src->ANS[i].RDATA, &resData, src->ANS[i].TYPE,
             origin_name, names[i], src->ANS[i].ADDITION);
+
+        memcpy(src->ANS[i].RDATA,&resData,src->ANS[i].RDLEN);
         *len += src->ANS[i].RDLEN + 12;
     }
 
@@ -255,9 +256,8 @@ char* responseFormat(int* len, Packet* src)
         memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE         16 Bits
         memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS        16 Bits
         memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL          32 Bits
-        memcpy((dataPos + 12), resData[i], pANS->RDLEN);        // Set RDATA
+        memcpy((dataPos + 12), pANS->RDATA, pANS->RDLEN);       // Set RDATA
         memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
-        free(resData[i]);                                       // Free resData
         
         dataPos += pANS->RDLEN + 12;                            // Set dest-pointer offset
     }

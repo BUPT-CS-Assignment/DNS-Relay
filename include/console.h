@@ -20,6 +20,7 @@
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
 extern int __DEBUG__;
+extern int LRU_CACHE_LENGTH;
 void consoleParse(int argc, char *argv[]);
 void consoleLog(int debug_level, const char * fmt,...);
 

@@ -75,7 +75,7 @@ void start(Socket* server)
 
             if(args->buf_len > 0)
             {
-                threadCreate(connectHandle, args);
+                threadCreate(connectHandle, (void*)args);
             }
             else
             {
@@ -110,7 +110,7 @@ void* connectHandle(void* param)
     if(p == NULL)
     {
         free(args);
-        threadExit();
+        threadExit(10);
     }
 
     int ret;
@@ -182,6 +182,6 @@ void* connectHandle(void* param)
 
     /* close socket */
     socketClose(&args->connect);
-    threadExit();
+    threadExit(10);
 }
 

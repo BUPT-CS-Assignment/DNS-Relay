@@ -7,7 +7,7 @@
  * @param thread_handler thread handler function
  * @param args thread handler function params
  */
-void threadCreate(void*(*thread_handler)(void*) ,thread_args* args){
+void threadCreate(void*(*thread_handler)(void*) ,void* args){
     if(args == NULL)   return;
     /* new thread create */
 
@@ -40,15 +40,40 @@ void threadCreate(void*(*thread_handler)(void*) ,thread_args* args){
  * @brief thread exit
  * 
  */
-void threadExit(){
+void threadExit(size_t time_ms){
 
 #ifdef _WIN32
-        Sleep(10);
+        Sleep(time_ms);
         ExitThread(0);
 #else
-        usleep(10000);
+        usleep(1000 * time_ms);
         pthread_exit(0);
 #endif
 
+
+}
+
+
+int lockInit(rwlock_t* lock){
+    return pthread_rwlock_init(lock,NULL);
+
+}
+
+int readLock(rwlock_t* lock){
+    return pthread_rwlock_rdlock(lock);
+}
+
+int unlock(rwlock_t* lock){
+    return pthread_rwlock_unlock(lock);
+
+}
+
+int writeLock(rwlock_t* lock){
+    return pthread_rwlock_wrlock(lock);
+
+}
+
+int lockDestroy(rwlock_t* lock){
+    return pthread_rwlock_destroy(lock);
 
 }

@@ -11,12 +11,14 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <pthread.h>
 #pragma comment(lib,"Ws2_32.lib")
 
 #define ERROR_CODE GetLastError()
 
 #else
 
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -42,8 +44,8 @@ extern int          __DEBUG__;
 
 
 /* inet change */
-int inetParse(int af,void* url_src,char* dest);
-int inetFormat(int af,char* url_src,void* dest);
+int inetParse(int af, void* url_src, char* dest);
+int inetFormat(int af, char* url_src, void* dest);
 
 
 
@@ -55,22 +57,18 @@ typedef struct Socket
 
 }Socket;
 
-/* MAX BUFFER SIZE */
-#define BUFFER_SIZE             1024
-
-/* New Thread Args */
-typedef struct thread_args
-{
-    char buf[BUFFER_SIZE];
-    Socket* server;
-    Socket connect;
-    int buf_len;
-
-}thread_args;
-
 /* New Thread Create */
-void    threadCreate(void*(*thread_handler)(void*),thread_args*);
-void    threadExit();
+void    threadCreate(void* (*thread_handler)(void*), void* args);
+void    threadExit(size_t sleep_time_ms);
+
+/* Thread Lock */
+typedef pthread_rwlock_t rwlock_t;
+
+int lockInit(rwlock_t*);
+int readLock(rwlock_t*);
+int unlock(rwlock_t*);
+int writeLock(rwlock_t*);
+int lockDestroy(rwlock_t*);
 
 
 #endif

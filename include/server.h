@@ -23,7 +23,21 @@ static char* RECORDS[][2] = {
 static int R_NUM = 6;   //Records Num
 
 extern Socket _dns_server;  //local dns server
+extern int LRU_CACHE_LENGTH;
 extern LRU_cache* _url_cache;
+
+/* MAX BUFFER SIZE */
+#define BUFFER_SIZE             1024
+
+/* New Thread Args */
+typedef struct thread_args
+{
+    char buf[BUFFER_SIZE];
+    Socket* server;
+    Socket connect;
+    int buf_len;
+
+}thread_args;
 
 
 /*----------------------------------- Functions ------------------------------------*/

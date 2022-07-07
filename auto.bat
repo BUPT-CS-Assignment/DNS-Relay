@@ -4,7 +4,7 @@ cd build
 cmake ..
 make
 
-% auto run with debug-level-2 %
+% auto run with debug-level-1 %
 cd ..
 cd bin
-dnsrelay -d1
+dnsrelay -d -c16
