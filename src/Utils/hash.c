@@ -319,7 +319,6 @@ int main () {
 		
 		char* val = strtok(buffer , " " );
 		char* key = strtok(NULL   , "\n");
-
 	
 		//puts(key); puts(val);
 		int flag = insert_hash(mapped , key , val , strlen(val));
@@ -327,12 +326,12 @@ int main () {
 	count_hash(mapped);
 	
 	memset(buffer , 0 , sizeof buffer);
-	if (query_hash(mapped , "www.bupt.cn" , &buffer , sizeof(buffer)) == SUCCUSS)
+	if (query_hash(mapped , "www.bupt.cn" , buffer , sizeof buffer) == SUCCUSS)
 		printf("ans is : %s\n" , buffer);
 	
 	const char ips[] = "0.0.0.0/1.1.1.1";
 	modify_hash(mapped , "www.bupt.cn" , ips , strlen(ips) );
-	if (query_hash(mapped , "www.bupt.cn" , &buffer , sizeof(buffer)) == SUCCUSS)
+	if (query_hash(mapped , "www.bupt.cn" , buffer , sizeof buffer) == SUCCUSS)
 		printf("ans is : %s\n" , buffer);	
 	fclose(fp);
 	return 0;
