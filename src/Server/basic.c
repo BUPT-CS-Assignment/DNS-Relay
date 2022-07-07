@@ -52,7 +52,7 @@ void start(Socket* server)
 
 /*******************************  TEST  **********************************/
 
-    consoleLog(DEBUG_L0,BOLDWHITE"> cache service start. cache size: %d\n",_url_cache->length);
+    consoleLog(DEBUG_L0,BOLDWHITE"> cache service start. cache capacity: %d\n",LRU_CACHE_LENGTH);
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
     consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n",_local_dns_addr);
 
@@ -118,10 +118,15 @@ void* connectHandle(void* param)
     if(GET_QR(p->FLAGS) == 1)
     {
         /* recv from local dns server -- query result */
-        consoleLog(DEBUG_L0, BOLDCYAN"> recv query result\n");
+        consoleLog(DEBUG_L0, BOLDBLUE"> recv query result\n");
 
         /* check packet info */
         packetCheck(p);
+
+        /* add to cache */
+
+        consoleLog(DEBUG_L0, BOLDMAGENTA"> cache len %d\n",urlStore(p));
+
 
         uint16_t origin;
         struct sockaddr_in from;
@@ -140,7 +145,7 @@ void* connectHandle(void* param)
         /* check packet info */
         packetCheck(p);
 
-        if(urlQuery(p, RECORDS, R_NUM) == 0)    //no result from url table
+        if(urlQuery(p) == 0)    //no result from url table
         {
             consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
 
@@ -177,5 +182,6 @@ void* connectHandle(void* param)
 
     /* close socket */
     socketClose(&args->connect);
+    threadExit();
 }
 

@@ -41,8 +41,9 @@ void*   connectHandle(void* param);
 
 
 /* Address Query */
-int     urlQuery(Packet*, char*** records, int num);
-int     qnameSearch(char *src,int type,int *res, char ***records, int urls_num);
+int     urlStore(Packet*);
+int     urlQuery(Packet*);
+int     qnameSearch(char *qname,uint16_t qtype,DNS_entry** result);
 
 
 /* Packet Handle */

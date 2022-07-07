@@ -1,19 +1,45 @@
 #include "cache.h"
+#include <console.h>
 
 
-int DNS_entry_set(DNS_entry* ptr,char* name,char* ip,uint8_t type){
+int DNS_entry_set(DNS_entry** ptr, char* name, char* ip,uint32_t ttl, uint8_t type, uint16_t addition)
+{
     if(ptr == NULL) return -1;
-    if(name != NULL){
-        ptr->domain_name = (char*)malloc(strlen(name) + 1);
-        strcpy(ptr->domain_name,name);
+    *ptr = (DNS_entry*)malloc(sizeof(DNS_entry));
+    if(name != NULL)
+    {
+        (*ptr)->domain_name = (char*)malloc(strlen(name) + 1);
+        strcpy((*ptr)->domain_name, name);
     }
-    if(ip != NULL){
-        ptr->ip = (char*)malloc(strlen(ip) + 1);
-        strcpy(ptr->ip,ip);
+    else
+    {
+        (*ptr)->domain_name = NULL;
     }
-    ptr->type = type;
+    if(ip != NULL)
+    {
+        (*ptr)->ip = (char*)malloc(strlen(ip) + 1);
+        strcpy((*ptr)->ip, ip);
+    }
+    else
+    {
+        (*ptr)->ip = NULL;
+    }
+    (*ptr)->type = type;
+    (*ptr)->addition = addition;
+    (*ptr)->timestamp = time(NULL) + ttl;
     return 0;
+
 }
+
+
+void DNS_entry_free(DNS_entry* entry)
+{
+    if(entry == NULL)   return;
+    free(entry->domain_name);
+    free(entry->ip);
+
+}
+
 
 /**
  * @description: 初始化缓存单元，动态分配内存
@@ -52,40 +78,50 @@ int LRU_cache_free(LRU_cache* cache)
  * 查询到的所有条文，为动态分配的指针，对应的字符串未被深拷贝过，释放靠上层
  * @return {*} 返回值为查询到符合的条文数量
  */
-int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
-  int count = 0;
-  *result = (DNS_entry *)malloc(sizeof(DNS_entry[MAX_FOUND]));
-  DNS_entry *temp[MAX_FOUND];
-  mylist_head *p;
-  mylist_for_each(p, &cache->head) {
-    DNS_entry *entry = mylist_entry(p, DNS_entry, node);
-    time_t current_time = time(NULL);
-    if (current_time - entry->timestamp > CACHE_TTL) {
-      __LRU_list_del(cache, entry);
-      cache->length--;
-    } else if (strcmp(entry->domain_name, query->domain_name) == 0) {
-      if (entry->type == query->type) {
-        if (count >= MAX_FOUND) {
-          break;
-        }
-        (*result)[count].domain_name = entry->domain_name;
-        (*result)[count].ip = entry->ip;
-        (*result)[count].type = entry->type;
-        (*result)[count].timestamp = entry->timestamp;
-        temp[count] = entry;
-        count++;
-      }
-    }
-  }
-  for (int i = 0; i < count; i++) {
-    printf("in func dn:%s--", (*result)[i].domain_name);
-    printf("in func ip:%s--", (*result)[i].ip);
-    printf("in func type:%d\n\n", (*result)[i].type);
+int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
+{
+    int count = 0;
+    *result = (DNS_entry*)malloc(sizeof(DNS_entry) * LRU_CACHE_LENGTH);
+    DNS_entry* temp[LRU_CACHE_LENGTH];
+    mylist_head* p;
+    mylist_for_each(p, &cache->head)
+    {
+        DNS_entry* entry = mylist_entry(p, DNS_entry, node);
 
-    mylist_rotate_node_head(&temp[i]->node, &cache->head);
-  }
-//  printf("pointer:%d\n", *result);
-  return count;
+        if(entry->timestamp < time(NULL))
+        {
+            consoleLog(DEBUG_L1,BOLDRED"> cache record overdue\n");
+            p = p->prev;
+            __LRU_list_del(cache, entry);
+            cache->length--;
+            
+        }
+        else if(strcmp(entry->domain_name, query->domain_name) == 0)
+        {
+            if(entry->type == query->type)
+            {
+                (*result)[count].domain_name = (char*)malloc(strlen(entry->domain_name) + 1);
+                strcpy((*result)[count].domain_name, entry->domain_name);
+                (*result)[count].ip = (char*)malloc(strlen(entry->ip) + 1);
+                strcpy((*result)[count].ip, entry->ip);
+                (*result)[count].type = entry->type;
+                (*result)[count].timestamp = entry->timestamp;
+                (*result)[count].addition = entry->addition;
+                temp[count] = entry;
+                count++;
+            }
+        }
+    }
+    for(int i = 0; i < count; i++)
+    {
+        // printf("in func dn:%s--", (*result)[i].domain_name);
+        // printf("in func ip:%s--", (*result)[i].ip);
+        // printf("in func type:%d\n\n", (*result)[i].type);
+
+        mylist_rotate_node_head(&temp[i]->node, &cache->head);
+    }
+    //  printf("pointer:%d\n", *result);
+    return count;
 }
 
 /**
@@ -126,21 +162,25 @@ int __LRU_list_del(LRU_cache* cache, DNS_entry* entry)
  * 互联网上查询到的内容组织成的新报文，事先应封装好对应内容
  * @return {*}
  */
-int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
-  entry->timestamp = time(NULL); //会自动记录时间
-  if (cache->length <
-      LRU_CACHE_LENGTH) { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
-    __LRU_list_add(cache, entry, &cache->list[cache->length]);
-    cache->length++;
-  } else { //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
-    DNS_entry *tail = mylist_entry(cache->head.prev, DNS_entry, node);
-    // printf("tail->dn:%s\n",tail->domain_name);
-    if (mylist_is_last(&tail->node, &cache->head)) {
-      __LRU_list_del(cache, tail);
-      free(tail->domain_name);
-      free(tail->ip);
-      __LRU_list_add(cache, entry, tail);
+int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
+{
+    if(cache->length <
+        LRU_CACHE_LENGTH)
+    { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
+        __LRU_list_add(cache, entry, &cache->list[cache->length]);
+        cache->length++;
     }
-  }
-  return LRU_OP_SUCCESS;
+    else
+    { //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
+        DNS_entry* tail = mylist_entry(cache->head.prev, DNS_entry, node);
+        // printf("tail->dn:%s\n",tail->domain_name);
+        if(mylist_is_last(&tail->node, &cache->head))
+        {
+            __LRU_list_del(cache, tail);
+            free(tail->domain_name);
+            free(tail->ip);
+            __LRU_list_add(cache, entry, tail);
+        }
+    }
+    return LRU_OP_SUCCESS;
 }

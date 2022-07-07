@@ -44,10 +44,10 @@ void threadExit(){
 
 #ifdef _WIN32
         Sleep(10);
-        //ExitThread(0);
+        ExitThread(0);
 #else
         usleep(10000);
-        //pthread_exit(0);
+        pthread_exit(0);
 #endif
 
 

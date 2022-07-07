@@ -87,7 +87,7 @@ Packet* packetParse(uint8_t* buf, int len)
 
         /* QNAME　parse */
         dest->QUESTS[i].QNAME = (char*)malloc(64 + 1);
-        urlParse(buf_pos, dest->QUESTS[i].QNAME, NULL, TYPE_QNAME,0, NULL);
+        urlParse(buf_pos, dest->QUESTS[i].QNAME, NULL, TYPE_QNAME, 0, NULL);
 
         /* QTYPE parse */
         buf_pos += (q_len + 1);
@@ -119,10 +119,12 @@ Packet* packetParse(uint8_t* buf, int len)
     +-----------------------------------------------+
     */
     dest->ANS = (Answer*)malloc(sizeof(Answer) * dest->ANCOUNT);
+    int name_qpos = 0;
     for(int i = 0; i < dest->ANCOUNT; i++)
     {
         /* Set Basic Info */
         dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t*)buf_pos));
+        dest->ANS[i].QPOS = (i == 0 ? 0 : (dest->ANS[i].NAME == dest->ANS[i - 1].NAME ? name_qpos : ++name_qpos));
         dest->ANS[i].TYPE = ntohs(*(uint16_t*)(buf_pos + 2));
         dest->ANS[i].CLASS = ntohs(*(uint16_t*)(buf_pos + 4));
         dest->ANS[i].TTL = ntohl(*(uint32_t*)(buf_pos + 6));
@@ -133,7 +135,7 @@ Packet* packetParse(uint8_t* buf, int len)
         /* Parse Url */
         dest->ANS[i].RDATA = (uint8_t*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
         urlParse(buf_pos + 12, dest->ANS[i].RDATA, &dest->ANS[i].ADDITION,
-                                dest->ANS[i].TYPE, dest->ANS[i].RDLEN, buf);
+            dest->ANS[i].TYPE, dest->ANS[i].RDLEN, buf);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }
     return dest;
@@ -179,13 +181,13 @@ char* responseFormat(int* len, Packet* src)
          ^ Pointer Recognize
     */
     uint16_t names[src->ANCOUNT];
-    uint16_t p_offset;          //quset section offset      
+    //uint16_t p_offset;          //quset section offset      
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        p_offset = 0xc00c;      //pos = 1100000000001100 
-        for(int j = 0; j < i; j++)
+        names[i] = 0xc00c;      //pos = 1100000000001100 
+        for(int j = 0; j < src->ANS[i].QPOS; j++)
         {
-            p_offset += strlen(src->QUESTS[src->ANS[j].QPOS].QNAME) + 1 + 4; //QNAME + QTYPE(2) + QCLASS(2)
+            names[i] += strlen(src->QUESTS[j].QNAME) + 1 + 4; //QNAME + QTYPE(2) + QCLASS(2)
         }
         //names[i] = htons(p_offset);
     }
@@ -198,10 +200,11 @@ char* responseFormat(int* len, Packet* src)
     for(int i = 0; i < src->ANCOUNT; i++)
     {
         resData[i] = malloc(TYPE_SIZE(src->ANS[i].TYPE));
-        *len += TYPE_SIZE(src->ANS[i].TYPE) + 12;
         /* format transform & get length  */
+        char* origin_name = src->QUESTS[src->ANS[i].QPOS].QNAME;
         src->ANS[i].RDLEN = (uint16_t)urlFormat(src->ANS[i].RDATA, resData[i], src->ANS[i].TYPE,
-            src->req_buf + src->ANS[i].NAME, names[i], src->ANS[i].ADDITION);
+            origin_name, names[i], src->ANS[i].ADDITION);
+        *len += src->ANS[i].RDLEN + 12;
     }
 
     /* Memory Allocated */
@@ -235,14 +238,11 @@ char* responseFormat(int* len, Packet* src)
     memcpy(dest + 6, &ancount, sizeof(uint16_t));    // Transform ANCOUNT
 
     /* set data section */
-    int offset = 0;
+    char* dataPos = dest + src->buf_len;
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        /* set offset */
-        char* dataPos = dest + (src->buf_len += offset);
-        offset = TYPE_SIZE(src->ANS[i].TYPE) + 12;
-
         Answer* pANS = &(src->ANS[i]);
+
         /* transform origin data */
         uint16_t name_ptr = htons(names[i]);
         uint16_t type = htons(pANS->TYPE);
@@ -251,13 +251,15 @@ char* responseFormat(int* len, Packet* src)
         uint32_t ttl = htonl(pANS->TTL);
 
         /* copy data to data buffer */
-        memcpy(dataPos, &name_ptr, sizeof(uint16_t));           // Set NAME poiner  16 Bits
+        memcpy((dataPos + 0), &name_ptr, sizeof(uint16_t));     // Set NAME poiner  16 Bits
         memcpy((dataPos + 2), &type, sizeof(uint16_t));         // Set TYPE         16 Bits
         memcpy((dataPos + 4), &class, sizeof(uint16_t));        // Set CLASS        16 Bits
         memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL          32 Bits
         memcpy((dataPos + 12), resData[i], pANS->RDLEN);        // Set RDATA
         memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
         free(resData[i]);                                       // Free resData
+        
+        dataPos += pANS->RDLEN + 12;                            // Set dest-pointer offset
     }
     return dest;
 
@@ -308,7 +310,7 @@ void packetCheck(Packet* src)
         printf("   RDLEN(%d)= %d  RDATA(%d)= '%s'", i, src->ANS[i].RDLEN, i, src->ANS[i].RDATA);
         if(src->ANS[i].TYPE == TYPE_MX)
         {
-            printf("  PREF(%d)= %d", i,src->ANS[i].ADDITION);
+            printf("  PREF(%d)= %d", i, src->ANS[i].ADDITION);
         }
         printf("\n");
     }

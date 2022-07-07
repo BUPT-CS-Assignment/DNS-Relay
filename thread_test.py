@@ -14,8 +14,9 @@ def exec(cmd):
 
 
 if __name__ == "__main__":
+    t = input('enter test-loop num:');
     name_list=['bupt.edu.cn','baidu.com','bing.com','unique.com','noui.cloud','test.com'];
-    while(1):
+    while(t):
         threads=[];
         for item in name_list:
             
@@ -25,5 +26,7 @@ if __name__ == "__main__":
 
         for th in threads:
             th.join()
-        
-        os.system('pause');
+
+        t = t-1
+    t = input('input any key to exit');
+    os.system("pause");

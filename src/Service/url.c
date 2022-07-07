@@ -4,8 +4,8 @@
 
 /**
  * @brief parse from inet to formal string
- * 
- * @param src origin url 
+ *
+ * @param src origin url
  * @param dest result string dest
  * @param addtion for preference in type-mx
  * @param mode pare mode(type)
@@ -35,7 +35,7 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
     /* MX preference */
     if(mode == TYPE_MX)
     {
-        *(uint16_t*)addtion = ntohs(*(uint16_t*)src);                   
+        *(uint16_t*)addtion = ntohs(*(uint16_t*)src);
         src = (uint8_t*)src + 2;                                        //move url pointer
         len -= 2;                                                       //change url answer length
     }
@@ -57,11 +57,12 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
             /* circulate copy */
             while(1)
             {
-                if(*zip_name == '\0'){
+                if(*zip_name == '\0')
+                {
                     name_ptr = 0;                                       //check if at the end of origin name
                     break;
                 }
-                uint16_t ptr_test_1 = ntohs(*(uint16_t*)zip_name);      
+                uint16_t ptr_test_1 = ntohs(*(uint16_t*)zip_name);
 
                 /* check if is name-pointer */
                 if((ptr_test_1 & 0xc000) != 0xc000)                     //not name-pointer, copy by length                    
@@ -98,7 +99,7 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
 
 /**
  * @brief format url to internet form
- * 
+ *
  * @param url origin url string
  * @param dest format result dest
  * @param mode format mode(type)
@@ -124,20 +125,20 @@ int urlFormat(char* url, void* dest, int mode, char* name, uint16_t pointer, uin
     /* MX preference */
     if(mode == TYPE_MX)
     {
-        *(uint16_t*)dest = addition;
+        *(uint16_t*)dest = htons(addition);
         dest = (uint8_t*)dest + 2;          //move dest pointer
     }
     /* CNAME format */
     if(mode == TYPE_CNAME || mode == TYPE_MX || mode == TYPE_NS)
     {
-        
+        //2mxc00c   <-  mx.baidu.com  #  c00c <- 5baidu3com0 (baidu.com)
         int url_len = strlen(url), name_len = strlen(name);
         int pos = -1;
         /* compare from the end */
         for(int i = url_len - 1, j = name_len - 1; i >= 0 && j >= 0; i--, j--)
         {
             if(url[i] != name[j]) break;
-            if(url[j] == '.')
+            if(name[j] == '.')
             {
                 pos = j + 1;            //record intact-repeat one
             }
@@ -146,17 +147,18 @@ int urlFormat(char* url, void* dest, int mode, char* name, uint16_t pointer, uin
                 pos = 0;                //all repeated
             }
         }
+
         int res_len = inetFormat(AF_MAX, url, dest);                //pre-format
-        if(pos == -1)                   
+        if(pos == -1)
         {
             return res_len;             //no compress
         }
         /* compressed one layer recording to qanme */
         int cmp_len = name_len - pos;                               //compress length
-        uint16_t offset = pointer + pos;                            //origin pointer
+        uint16_t offset = htons(pointer + pos);                     //origin pointer
         char* change_dest = dest + (res_len - 1 - cmp_len);         //replace repaeted section on pre-format
         memcpy(change_dest, &offset, sizeof(uint16_t));             //memory copy
-        return res_len - cmp_len + 2 + (mode == TYPE_MX ? 2 : 0);   //return real length
+        return res_len - cmp_len + 1 + (mode == TYPE_MX ? 2 : 0);   //return real length
     }
     return SOCKET_ERROR;
 
