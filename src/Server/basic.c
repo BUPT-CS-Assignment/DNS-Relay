@@ -30,28 +30,6 @@ void start(Socket* server)
         exit(-1);
     }
 
-/*******************************  TEST  **********************************/
-    // DNS_entry temp;
-    // DNS_entry_set(&temp,"baidu.com","1.2.3.4",TYPE_A);
-    // LRU_entry_add(_url_cache,&temp);
-    // DNS_entry_set(&temp,"baidu.com","4.3.2.1",TYPE_A);
-    // LRU_entry_add(_url_cache,&temp);
-
-    // mylist_head* p;
-    // mylist_for_each(p,&_url_cache->head){
-    //     printf("p: %lld",p);
-    // }
-
-    // DNS_entry* dest;
-    // int res = LRU_cache_find(_url_cache,&temp,&dest);
-    // printf("result: %d\n",res);
-    // for(int i = 0; i < res; i++){
-    //     printf("ip:%s type:%d\n",dest[i].ip,dest[i].type);
-    // }
-    
-
-/*******************************  TEST  **********************************/
-
     consoleLog(DEBUG_L0,BOLDWHITE"> cache service start. cache capacity: %d\n",LRU_CACHE_LENGTH);
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
     consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n",_local_dns_addr);
@@ -124,7 +102,6 @@ void* connectHandle(void* param)
         packetCheck(p);
 
         /* add to cache */
-
         consoleLog(DEBUG_L0, BOLDMAGENTA"> cache len %d\n",urlStore(p));
 
 

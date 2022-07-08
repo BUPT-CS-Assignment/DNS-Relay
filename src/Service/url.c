@@ -60,6 +60,7 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
                 if(*zip_name == '\0')
                 {
                     name_ptr = 0;                                       //check if at the end of origin name
+                    *temp_pos = '\0';
                     break;
                 }
                 uint16_t ptr_test_1 = ntohs(*(uint16_t*)zip_name);
@@ -83,12 +84,12 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
                     else                                                //not name-pointer, current translation end
                     {
                         name_ptr = 0;
+                        *temp_pos = '\0';
                         break;
                     }
                 }
             }
         }
-        *temp_pos = '\0';
         return inetParse(AF_MAX, temp, dest);
     }
     return SOCKET_ERROR;
@@ -151,7 +152,8 @@ int urlFormat(char* url, void* dest, int mode, char* name, uint16_t pointer, uin
         int res_len = inetFormat(AF_MAX, url, dest);                //pre-format
         if(pos == -1)
         {
-            return res_len;             //no compress
+            ((char*)dest)[res_len] = '\0';
+            return res_len + 1;             //no compress
         }
         /* compressed one layer recording to qanme */
         int cmp_len = name_len - pos;                               //compress length

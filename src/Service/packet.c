@@ -370,7 +370,7 @@ void bufferCheck(char* buf, int len)
 
     if(__DEBUG__ < DEBUG_L2)    return;
 
-    printf("[   [Origin] ");
+    printf("   [Origin] ");
     for(int i = 0; i < len; i++)
     {
         /* Format Output */

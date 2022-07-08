@@ -5,9 +5,10 @@
 /* --------------------------------- Basic Definition ---------------------------------*/
 /**
  * @brief rotate thread args
- * 
+ *
  */
-typedef struct cache_args{
+typedef struct cache_args
+{
     LRU_cache* cache;
     DNS_entry** temp_array;
     int count;
@@ -19,7 +20,7 @@ int LRU_CACHE_LENGTH = 64;
 
 /**
  * @brief fill dns_entry structure
- * 
+ *
  * @param ptr dns_entry pointer address
  * @param name domain_name
  * @param ip ip/cname/ns/mx records
@@ -28,10 +29,10 @@ int LRU_CACHE_LENGTH = 64;
  * @param addition addtional record (preference on MX)
  * @return int fill result
  */
-int DNS_entry_set(DNS_entry** ptr, char* name, char* ip,uint32_t ttl, uint8_t type, uint16_t addition)
+int DNS_entry_set(DNS_entry** ptr, char* name, char* ip, uint32_t ttl, uint8_t type, uint16_t addition)
 {
     if(ptr == NULL) return -1;
-    *ptr = (DNS_entry*)malloc(sizeof(DNS_entry));       //memory space
+    *ptr = (DNS_entry*)malloc(sizeof(DNS_entry));               //apply for memory space
 
     if(name != NULL)
     {
@@ -51,8 +52,8 @@ int DNS_entry_set(DNS_entry** ptr, char* name, char* ip,uint32_t ttl, uint8_t ty
     {
         (*ptr)->ip = NULL;
     }
-    (*ptr)->type = type;                                        //copy type
-    (*ptr)->addition = addition;                                //copy addition
+    (*ptr)->type = type;                                        //copy type section
+    (*ptr)->addition = addition;                                //copy addition section
     (*ptr)->timestamp = time(NULL) + ttl;                       //set timestamp
     return 0;
 
@@ -63,7 +64,7 @@ int DNS_entry_set(DNS_entry** ptr, char* name, char* ip,uint32_t ttl, uint8_t ty
 
 /**
  * @brief free dns_entry structure
- * 
+ *
  * @param entry dns_entry struct pointer
  */
 void DNS_entry_free(DNS_entry* entry)
@@ -87,11 +88,25 @@ void DNS_entry_free(DNS_entry* entry)
 int __LRU_list_add(LRU_cache* cache, DNS_entry* entry, DNS_entry* location)
 {
     memcpy(location, entry, sizeof(DNS_entry));
-    location->domain_name = (char*)malloc(sizeof(entry->domain_name));
-    location->ip = (char*)malloc(sizeof(entry->ip));
-    memcpy(location->domain_name, entry->domain_name,
-        strlen(entry->domain_name) + 1);
-    memcpy(location->ip, entry->ip, strlen(entry->ip) + 1);
+    if(entry->domain_name != NULL)
+    {
+        location->domain_name = (char*)malloc(strlen(entry->domain_name) + 1);
+        strcpy(location->domain_name,entry->domain_name);
+    }
+    else
+    {
+        location->domain_name = NULL;
+    }
+    if(entry->ip != NULL)
+    {
+        location->ip = (char*)malloc(strlen(entry->ip) + 1);
+        strcpy(location->ip,entry->ip);
+    }
+    else
+    {
+        location->ip = NULL;
+    }
+
     mylist_add_head(&location->node, &cache->head);
 
     return LRU_OP_SUCCESS;
@@ -116,11 +131,12 @@ int __LRU_list_del(LRU_cache* cache, DNS_entry* entry)
 
 /**
  * @brief multi-thread LRU_cache rotate
- * 
+ *
  * @param param thread param pointer (normally cache_args)
- * @return void* 
+ * @return void*
  */
-void* __LRU_cache_rotate(void* param){
+void* __LRU_cache_rotate(void* param)
+{
     cache_args* args = (cache_args*)param;
 
     /* param copy　*/
@@ -200,11 +216,11 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
 
         if(entry->timestamp < time(NULL))
         {
-            consoleLog(DEBUG_L1,BOLDRED"> cache record overdue\n");
+            consoleLog(DEBUG_L1, BOLDRED"> cache record overdue\n");
             p = p->prev;
             __LRU_list_del(cache, entry);
             cache->length--;
-            
+
         }
         else if(strcmp(entry->domain_name, query->domain_name) == 0)
         {
@@ -227,7 +243,7 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
     cargs->cache = cache;
     cargs->count = count;
     cargs->temp_array = temp;
-    threadCreate(__LRU_cache_rotate,cargs);         //new thread to rotate
+    threadCreate(__LRU_cache_rotate, cargs);         //new thread to rotate
     return count;
 }
 
@@ -243,10 +259,10 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
 int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
 {
     writeLock(&(cache->lock));
-    if(cache->length <
-        LRU_CACHE_LENGTH)
+    if(cache->length < LRU_CACHE_LENGTH)
     { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
         __LRU_list_add(cache, entry, &cache->list[cache->length]);
+
         cache->length++;
     }
     else
@@ -256,11 +272,12 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
         if(mylist_is_last(&tail->node, &cache->head))
         {
             __LRU_list_del(cache, tail);
-            free(tail->domain_name);
-            free(tail->ip);
+            free(tail->domain_name); tail->domain_name = NULL;
+            free(tail->ip); tail->ip = NULL;
             __LRU_list_add(cache, entry, tail);
         }
     }
     unlock(&(cache->lock));
+
     return LRU_OP_SUCCESS;
 }
