@@ -1,5 +1,5 @@
-#include <console.h>
-#include <server.h>
+#include "console.h"
+#include "server.h"
 
 int __DEBUG__ = 0;
 Socket _dns_server;

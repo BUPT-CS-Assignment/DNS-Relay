@@ -1,6 +1,6 @@
-#include <map.h>
-#include <console.h>
-#include <server.h>
+#include "utils/map.h"
+#include "console.h"
+#include "server.h"
 
 LRU_cache* _url_cache = NULL;
 

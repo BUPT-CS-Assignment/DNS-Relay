@@ -1,4 +1,4 @@
-#include "hash.h"
+#include "utils/hash.h"
 
 /* -----------------GENERIC Hash Node Implement----------------- */
 /** 

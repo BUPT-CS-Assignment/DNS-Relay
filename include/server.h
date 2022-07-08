@@ -1,9 +1,9 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
-#include <main.h>
-#include <protocol.h>
-#include <cache.h>
+#include "main.h"
+#include "protocol.h"
+#include "cache.h"
 
 /*----------------------------------- Definitions -----------------------------------*/
 
@@ -11,18 +11,8 @@ static char _local_dns_addr[64] = "114.114.114.114";
 
 /*-------------------------------- Global Variables ---------------------------------*/
 
-/* Static Records */
-static char* RECORDS[][2] = {
-    {"bing.com","204.79.197.200"},
-    {"bing.com","13.107.21.200"},
-    {"bing.com","2620:1ec:c11::300"},
-    {"bupt.edu.cn","10.3.9.161"},
-    {"noui.cloud","101.43.201.20"},
-    {"unique.com","220.177.198.124"}
-};
-static int R_NUM = 6;   //Records Num
 
-extern Socket _dns_server;  //local dns server
+extern Socket _dns_server;      //local dns server
 extern int LRU_CACHE_LENGTH;
 extern LRU_cache* _url_cache;
 
