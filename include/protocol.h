@@ -30,8 +30,8 @@ static size_t TYPE_SIZE(uint16_t TYPE){
 /* TYPE TYPE BUFFER SIZE FOR PARSE */
 static size_t TYPE_BUF_SIZE(uint16_t TYPE){
     switch(TYPE){
-        case TYPE_A:            return 16;
-        case TYPE_AAAA:         return 40;
+        case TYPE_A:            return 22;
+        case TYPE_AAAA:         return 50;
         case TYPE_NS:           
         case TYPE_MX:
         case TYPE_CNAME:        return 255;

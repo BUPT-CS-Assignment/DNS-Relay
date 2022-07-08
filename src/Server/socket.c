@@ -30,6 +30,7 @@ int socketInit(Socket* server,uint32_t address ,uint16_t port)
     }
 
     /* socket base */
+    memset(&server->_addr,0,sizeof(struct sockaddr_in));
     server->_addr.sin_addr.s_addr = address;    //Connection Address
     server->_addr.sin_family = AF_INET;         //IPv4
     server->_addr.sin_port = htons(port);       //Port

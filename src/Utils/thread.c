@@ -30,7 +30,8 @@ void threadCreate(void*(*thread_handler)(void*) ,void* args){
         free(args);
     }
 #endif
-
+    ++ __THREAD__;
+    printf("thread num: %d\n",__THREAD__);
 }
 
 
@@ -40,7 +41,8 @@ void threadCreate(void*(*thread_handler)(void*) ,void* args){
  * 
  */
 void threadExit(size_t time_ms){
-
+    -- __THREAD__;
+    printf("thread num: %d\n",__THREAD__);
 #ifdef _WIN32
         Sleep(time_ms);
         ExitThread(0);
@@ -48,7 +50,7 @@ void threadExit(size_t time_ms){
         usleep(1000 * time_ms);
         pthread_exit(0);
 #endif
-
+    
 
 }
 

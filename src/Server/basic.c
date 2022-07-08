@@ -4,6 +4,7 @@
 
 LRU_cache* _url_cache = NULL;
 char _local_dns_addr[64] = "114.114.114.114";
+int          __THREAD__ = 0;
 
 /**
  * @brief Start dns_realy  server
@@ -206,6 +207,9 @@ void* debugHandle()
             else if(cmd[1] == '1') __DEBUG__ = DEBUG_L1;
             else __DEBUG__ = DEBUG_L0;
             consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);
+        }
+        else if(cmd[0] == 't'){
+            consoleLog(DEBUG_L0,BOLDRED"> thread num: %d\n",__THREAD__);
         }
         else
         {

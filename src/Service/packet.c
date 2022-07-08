@@ -135,7 +135,7 @@ Packet* packetParse(uint8_t* buf, int len)
 
         /* Parse Url */
         dest->ANS[i].RDATA = (uint8_t*)malloc(TYPE_BUF_SIZE(dest->ANS[i].TYPE));
-        urlParse(buf_pos + 12, dest->ANS[i].RDATA, &dest->ANS[i].ADDITION,
+        urlParse(buf_pos + 12, (char*)dest->ANS[i].RDATA, &dest->ANS[i].ADDITION,
             dest->ANS[i].TYPE, dest->ANS[i].RDLEN, buf);
         buf_pos += (12 + dest->ANS[i].RDLEN);
     }

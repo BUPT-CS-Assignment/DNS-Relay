@@ -41,6 +41,7 @@ typedef int SOCKET;
 #define DEBUG_L1    1
 #define DEBUG_L2    2
 extern int          __DEBUG__;
+extern int          __THREAD__;
 
 
 /* inet change */

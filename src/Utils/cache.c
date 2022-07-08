@@ -208,11 +208,12 @@ void LRU_cache_check(LRU_cache* cache){
         printf("  DN= '%s'\n  RECORD= '%s'\n",entry->domain_name,entry->ip);
         printf("  TYPE= %d   TIMESTAMP= %lld",entry->type,entry->timestamp);
         if(entry->type == TYPE_MX){
-            printf("  PREF= %d",entry->addition);
+            printf("   PREF= %d",entry->addition);
         }
         printf("\n");
     }
     unlock(&(cache->lock));
+    printf(BOLDRED"> check end\n");
 }
 
 
@@ -239,8 +240,14 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
         if(entry->timestamp < time(NULL))
         {
             consoleLog(DEBUG_L1, BOLDRED"> cache record overdue\n");
+            // unlock(&(cache->lock));
+            // writeLock(&(cache->lock));
+
             p = p->prev;
             __LRU_list_del(cache, entry);
+
+            // unlock(&(cache->lock));
+            // readLock(&(cache->lock));
             cache->length--;
 
         }
@@ -290,7 +297,6 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
     else
     { //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
         DNS_entry* tail = mylist_entry(cache->head.prev, DNS_entry, node);
-        // printf("tail->dn:%s\n",tail->domain_name);
         if(mylist_is_last(&tail->node, &cache->head))
         {
             __LRU_list_del(cache, tail);
