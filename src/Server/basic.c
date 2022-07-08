@@ -3,6 +3,7 @@
 #include "server.h"
 
 LRU_cache* _url_cache = NULL;
+char _local_dns_addr[64] = "114.114.114.114";
 
 /**
  * @brief Start dns_realy  server
@@ -20,19 +21,24 @@ void start(Socket* server)
     /* bind port */
     if(bind(server->_fd, (struct sockaddr*)&server->_addr, sizeof(server->_addr)) < 0)
     {
-        consoleLog(DEBUG_L0, RED"> bind port %d failed. code %d\n", ntohs(server->_addr.sin_port),ERROR_CODE);
+        consoleLog(DEBUG_L0, RED"> bind port %d failed. code %d\n", ntohs(server->_addr.sin_port), ERROR_CODE);
         exit(-1);
     }
 
     /* cache service init */
-    if(LRU_cache_init(&_url_cache) != LRU_OP_SUCCESS){
-        consoleLog(DEBUG_L0, RED"> cache service error.\n", ntohs(server->_addr.sin_port),ERROR_CODE);
+    if(LRU_cache_init(&_url_cache) != LRU_OP_SUCCESS)
+    {
+        consoleLog(DEBUG_L0, RED"> cache service error.\n", ntohs(server->_addr.sin_port), ERROR_CODE);
         exit(-1);
     }
 
-    consoleLog(DEBUG_L0,BOLDWHITE"> cache service start. cache capacity: %d\n",LRU_CACHE_LENGTH);
+    consoleLog(DEBUG_L0, BOLDWHITE"> cache service start. cache capacity: %d\n", LRU_CACHE_LENGTH);
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
-    consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n",_local_dns_addr);
+    consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n", _local_dns_addr);
+
+    threadCreate(debugHandle, NULL);
+
+    setTimeOut(server, 2, 0);
 
     int fromlen = sizeof(struct sockaddr_in);
     fd_set fds;
@@ -40,12 +46,14 @@ void start(Socket* server)
     for(;;)
     {
         FD_ZERO(&fds);
-        FD_SET(server->_fd,&fds);
-        SOCKET ret = select(server->_fd+1,&fds,NULL,NULL,NULL);
-        if(ret <= 0){
+        FD_SET(server->_fd, &fds);
+        SOCKET ret = select(server->_fd + 1, &fds, NULL, NULL, NULL);
+        if(ret <= 0)
+        {
             continue;
         }
-        if(FD_ISSET(server->_fd,&fds)){
+        if(FD_ISSET(server->_fd, &fds))
+        {
             /* udp wait for new connection */
             thread_args* args = malloc(sizeof(thread_args));
             args->server = server;
@@ -60,13 +68,14 @@ void start(Socket* server)
                 free(args);
             }
         }
-        
+
     }
 
     /* close server */
     socketClose(server);
 
 }
+
 
 
 /**
@@ -84,14 +93,16 @@ void* connectHandle(void* param)
     Socket* server = args->server;      //dns-relay server
     Socket* from = &args->connect;      //dns reqeust/response from
 
+    /* packet parse */
     Packet* p = packetParse(args->buf, args->buf_len);
+
     if(p == NULL)
     {
         free(args);
-        threadExit(10);
+        threadExit(1);
     }
 
-    int ret;
+    int ret = -1;
 
     if(GET_QR(p->FLAGS) == 1)
     {
@@ -102,7 +113,7 @@ void* connectHandle(void* param)
         packetCheck(p);
 
         /* add to cache */
-        consoleLog(DEBUG_L0, BOLDMAGENTA"> cache len %d\n",urlStore(p));
+        consoleLog(DEBUG_L0, BOLDMAGENTA"> cache len %d\n", urlStore(p));
 
 
         uint16_t origin;
@@ -127,8 +138,8 @@ void* connectHandle(void* param)
             consoleLog(DEBUG_L0, BOLDYELLOW"> query from dns server\n");
 
             /* add to map */
-            uint16_t converted = addToMap(p->ID,&args->connect._addr);
-            SET_ID(args->buf,&converted);
+            uint16_t converted = addToMap(p->ID, &args->connect._addr);
+            SET_ID(args->buf, &converted);
 
             /* send to dns server */
             ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
@@ -159,6 +170,48 @@ void* connectHandle(void* param)
 
     /* close socket */
     socketClose(&args->connect);
-    threadExit(10);
+    threadExit(1);
+}
+
+
+
+/**
+ * @brief debug thread handler
+ * 
+ * @return void* 
+ */
+void* debugHandle()
+{
+    char cmd[255];
+    while(1)
+    {
+        printf(BOLDWHITE"> ");
+        scanf("%[^\n]", &cmd);
+        if(strcmp(cmd, "cache") == 0)
+        {
+            LRU_cache_check(_url_cache);
+        }
+        else if(strncmp(cmd, "server", 6) == 0)
+        {
+            uint32_t res = inet_addr((char*)cmd + 7);
+            if(res != INADDR_NONE)
+            {
+                _dns_server._addr.sin_addr.s_addr = res;
+                consoleLog(DEBUG_L0, BOLDCYAN"> local dns server reset: %s\n", (char*)cmd + 7);
+            }
+        }
+        else if(cmd[0] == 'd')
+        {
+            if(cmd[1] == '2') __DEBUG__ = DEBUG_L2;
+            else if(cmd[1] == '1') __DEBUG__ = DEBUG_L1;
+            else __DEBUG__ = DEBUG_L0;
+            consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);
+        }
+        else
+        {
+            consoleLog(DEBUG_L0, BOLDRED"> command undefined.\n");
+        }
+        rewind(stdin);
+    }
 }
 

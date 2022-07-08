@@ -51,6 +51,7 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
         /* recursion translate */
         while((name_ptr & 0xc000) == 0xc000)    //check if is name-pointer
         {
+            
             uint16_t offset = GET_QNAME_PTR(name_ptr);                  //count name-pointer
             char* zip_name = buf + offset;                              //get origin name string
 
@@ -78,15 +79,15 @@ int urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8
                     uint16_t ptr_test_2 = ntohs(*(uint16_t*)(zip_name + 2));
                     if((ptr_test_2 & 0xc000) == 0xc000)                 //still name-pointer, continue to translate
                     {
-                        memcpy(temp_pos, zip_name, sizeof(uint16_t));
                         name_ptr = ptr_test_1;
                     }
                     else                                                //not name-pointer, current translation end
                     {
                         name_ptr = 0;
                         *temp_pos = '\0';
-                        break;
+                        
                     }
+                    break;
                 }
             }
         }

@@ -8,7 +8,6 @@
  * @param args thread handler function params
  */
 void threadCreate(void*(*thread_handler)(void*) ,void* args){
-    if(args == NULL)   return;
     /* new thread create */
 
 #ifdef _WIN32

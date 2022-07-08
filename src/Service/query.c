@@ -4,11 +4,21 @@
 
 int urlStore(Packet* src)
 {
+    consoleLog(DEBUG_L1, BOLDMAGENTA"> store into cache\n");
+    //char name[255];
     for(int i = 0; i < src->ANCOUNT; i++)
     {
+        if(src->ANS[i].TYPE != src->QUESTS[0].QTYPE)
+        {
+            continue;
+        }
         DNS_entry* entry;
         Answer* pANS = &src->ANS[i];
-        DNS_entry_set(&entry, src->QUESTS[pANS->QPOS].QNAME, pANS->RDATA, pANS->TTL, pANS->TYPE, pANS->ADDITION);
+
+        //urlParse(&pANS->NAME,name,NULL,TYPE_CNAME,2,src->req_buf);
+        //DNS_entry_set(&entry, name, pANS->RDATA, pANS->TTL, pANS->TYPE, pANS->ADDITION);
+
+        DNS_entry_set(&entry, src->QUESTS[0].QNAME, pANS->RDATA, pANS->TTL, pANS->TYPE, pANS->ADDITION);
         LRU_entry_add(_url_cache, entry);
     }
     return _url_cache->length;
@@ -27,7 +37,6 @@ int urlQuery(Packet* src)
 {
     src->ANCOUNT = 0;
     src->ANS = NULL;
-    int res[src->QDCOUNT][16];
     for(int i = 0; i < src->QDCOUNT; i++)
     {
         /* Found All Matches */
@@ -48,7 +57,6 @@ int urlQuery(Packet* src)
         /* Load All Match Results */
         for(int j = 0; j < found; j++)
         {
-            Answer* temp = (Answer*)malloc(sizeof(Answer) * found);
             src->ANS[pos + j].QPOS = i;
             src->ANS[pos + j].TYPE = src->QUESTS[i].QTYPE;
             src->ANS[pos + j].CLASS = src->QUESTS[i].QCLASS;

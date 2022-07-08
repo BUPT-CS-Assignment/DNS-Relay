@@ -16,22 +16,22 @@ void consoleParse(int argc, char* argv[])
         int len = strlen(argv[i]);
         if(argv[i][0] == '-' && len >= 2)
         {
-            if(argv[i][1] == 'd')
+            if(argv[i][1] == 'd')       // debug level
             {
                 __DEBUG__ = 1;
                 if(len >= 3 && argv[i][2] == '2')
                 {
-                    __DEBUG__ = 2;
+                    __DEBUG__ = 2;      //debug level 2
                 }
             }
-            else if(argv[i][1] == 'c' && len >= 3)
+            else if(argv[i][1] == 'c' && len >= 3)  //cache size
             {
                 LRU_CACHE_LENGTH = atoi(argv[i] + 2);
             }
-            else if(argv[i][1] == 's' && len >= 3)
-            {
-                strcpy((char*)&_local_dns_addr, argv[2] + 2);
-            }
+        }
+        else if(argv[i][0] == '=' && len >= 2)
+        {
+            strcpy(_local_dns_addr, argv[i] + 1);   //local dns server address
         }
     }
 

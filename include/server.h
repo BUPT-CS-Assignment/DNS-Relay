@@ -7,7 +7,7 @@
 
 /*----------------------------------- Definitions -----------------------------------*/
 
-static char _local_dns_addr[64] = "114.114.114.114";
+extern char _local_dns_addr[64];
 
 /*-------------------------------- Global Variables ---------------------------------*/
 
@@ -42,6 +42,7 @@ void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
 /* Server Base */
 void    start(Socket*);
 void*   connectHandle(void* param);
+void*   debugHandle();
 
 
 /* Address Query */

@@ -122,8 +122,9 @@ int __LRU_list_add(LRU_cache* cache, DNS_entry* entry, DNS_entry* location)
  */
 int __LRU_list_del(LRU_cache* cache, DNS_entry* entry)
 {
-    mylist_del_init(&entry->node);
-
+    free(entry->domain_name);   entry->domain_name = NULL;
+    free(entry->ip);            entry->ip = NULL;
+    mylist_del(&entry->node);
     return LRU_OP_SUCCESS;
 }
 
@@ -184,6 +185,7 @@ int LRU_cache_init(LRU_cache** cptr)
  */
 int LRU_cache_free(LRU_cache* cache)
 {
+    writeLock(&cache->lock);
     for(int i = 0; i < cache->length; i++)
     {
         free(cache->list[i].domain_name);
@@ -191,6 +193,26 @@ int LRU_cache_free(LRU_cache* cache)
     }
     lockDestroy(&(cache->lock));
     return LRU_OP_SUCCESS;
+}
+
+
+void LRU_cache_check(LRU_cache* cache){
+    mylist_head* p;
+    printf(BOLDRED"> cache check\n"RESET);
+    readLock(&(cache->lock));
+    int i = 0;
+    mylist_for_each(p, &cache->head)
+    {
+        DNS_entry* entry = mylist_entry(p, DNS_entry, node);
+        printf(BOLDBLUE"- SERIAL= %d\n"RESET,i++);
+        printf("  DN= '%s'\n  RECORD= '%s'\n",entry->domain_name,entry->ip);
+        printf("  TYPE= %d   TIMESTAMP= %lld",entry->type,entry->timestamp);
+        if(entry->type == TYPE_MX){
+            printf("  PREF= %d",entry->addition);
+        }
+        printf("\n");
+    }
+    unlock(&(cache->lock));
 }
 
 
@@ -272,8 +294,6 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
         if(mylist_is_last(&tail->node, &cache->head))
         {
             __LRU_list_del(cache, tail);
-            free(tail->domain_name); tail->domain_name = NULL;
-            free(tail->ip); tail->ip = NULL;
             __LRU_list_add(cache, entry, tail);
         }
     }

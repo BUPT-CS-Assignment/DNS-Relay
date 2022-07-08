@@ -73,11 +73,18 @@ void socketClose(Socket* s)
 void setTimeOut(Socket* s, uint32_t send_timeout, uint32_t recv_timeout)
 {
     if(s == NULL)   return;
+    struct timeval send_timeval;
+    send_timeval.tv_sec = send_timeout;
+
+    struct timeval recv_timeval;
+    recv_timeval.tv_sec = recv_timeout;
 
     /* set send timeout */
-    setsockopt(s->_fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&send_timeout, sizeof(int));
+    if(send_timeout != 0)
+        setsockopt(s->_fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&send_timeval, sizeof(send_timeval));
 
     /* set recv timeout */
-    setsockopt(s->_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&recv_timeout, sizeof(int));
+    if(recv_timeout != 0)
+        setsockopt(s->_fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&recv_timeval, sizeof(recv_timeval));
 
 }

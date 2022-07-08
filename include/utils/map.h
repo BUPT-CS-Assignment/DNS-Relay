@@ -4,7 +4,7 @@
 #include "main.h"
 
 #define MAX_MAP_SIZE        128
-#define CONVERT_TTL         10
+#define CONVERT_TTL         2
 
 typedef struct MapNode{
     uint16_t _origin;

@@ -123,8 +123,9 @@ Packet* packetParse(uint8_t* buf, int len)
     for(int i = 0; i < dest->ANCOUNT; i++)
     {
         /* Set Basic Info */
-        dest->ANS[i].NAME = GET_QNAME_PTR(ntohs(*(uint16_t*)buf_pos));
-        dest->ANS[i].QPOS = (i == 0 ? 0 : (dest->ANS[i].NAME == dest->ANS[i - 1].NAME ? name_qpos : ++name_qpos));
+        dest->ANS[i].NAME = *(uint16_t*)buf_pos;
+        dest->ANS[i].QPOS = 0;
+        //(i == 0 ? 0 : (dest->ANS[i].NAME == dest->ANS[i - 1].NAME ? name_qpos : ++name_qpos));
         dest->ANS[i].TYPE = ntohs(*(uint16_t*)(buf_pos + 2));
         dest->ANS[i].CLASS = ntohs(*(uint16_t*)(buf_pos + 4));
         dest->ANS[i].TTL = ntohl(*(uint32_t*)(buf_pos + 6));
@@ -165,7 +166,7 @@ char* responseFormat(int* len, Packet* src)
     SET_QR(flag);   SET_RD(flag);
 
     /* Answer Section */
-    if(src->ANCOUNT == 0)
+    if(src->ANCOUNT == 0 || src->ANCOUNT == UINT16_MAX)
     {
         SET_AA(flag);
         SET_RCODE(flag, RCODE_NAME_ERROR);
@@ -304,7 +305,7 @@ void packetCheck(Packet* src)
     /* Check Answer Section */
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        printf(" - NAMEPTR(%d)= %d\n", i, src->ANS[i].NAME);
+        printf(" - NAMEPTR(%d)= %04x\n", i, htons(src->ANS[i].NAME));
         printf("   TYPE(%d)= %d  CLASS(%d)= %d  TTL(%d)= %d\n", i, src->ANS[i].TYPE,
             i, src->ANS[i].CLASS, i, src->ANS[i].TTL);
         printf("   RDLEN(%d)= %d  RDATA(%d)= '%s'", i, src->ANS[i].RDLEN, i, src->ANS[i].RDATA);

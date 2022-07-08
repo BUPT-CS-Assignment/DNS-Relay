@@ -42,3 +42,4 @@ int LRU_cache_init(LRU_cache** ptr);
 int LRU_cache_free(LRU_cache* cache);
 int LRU_entry_add(LRU_cache* cache, DNS_entry* entry);
 int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result);
+void LRU_cache_check(LRU_cache* cache);
