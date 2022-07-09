@@ -1,5 +1,5 @@
-#include "utils/hash.h"
 #include "cache.h"
+#include "utils/hash.h"
 
 /**
  * @description: 为高层使用的支持多个的版本
@@ -62,7 +62,7 @@ int query_one(struct string_hash *map, DNS_entry *entry) {
     return ret;
   } else {
     mylist_head *p;
-    mylist_for_each(p, &result) {
+    mylist_for_each(p, result) {
       DNS_entry *temp = mylist_entry(p, DNS_entry, node);
       printf("dn:%s--", entry->domain_name);
       printf("ip:%s--", entry->ip);
@@ -80,27 +80,28 @@ int query_one(struct string_hash *map, DNS_entry *entry) {
 int delete_one(struct string_hash *map, DNS_entry *entry) {
   mylist_head *head;
   int ret = query_hash(map, entry->domain_name, &head, sizeof(mylist_head *));
-  if (ret = FAILURE) {
+  if (ret == FAILURE) {
     return ret;
   } else if (mylist_is_singular(head)) {
     //只有一个，则需要清空对应的桶内内容，这里把连着的条文一同free了，可能不对
     remove_hash(map, entry->domain_name);
-    mylist_head temp = head->next;
+    mylist_head *temp = head->next;
     DNS_entry *need_to_free = mylist_entry(temp, DNS_entry, node);
     free(need_to_free);
     free(head);
   } else {
     mylist_head *p;
-    mylist_for_each(p, &head) {
+    mylist_for_each(p, head) {
       DNS_entry *temp = mylist_entry(p, DNS_entry, node);
       // printf("dn:%s--", entry->domain_name);
       // printf("ip:%s--", entry->ip);
       // printf("type:%d\n\n", entry->type);
       if (strcmp(entry->ip, temp->ip) == 0) {
-        mylist_head next = p;
+        mylist_head *next = p;
         p = p->prev; //
         mylist_del(next);
-        free(mylist_entry(next, DNS_entry, node)); // free掉该条指定条文
+        DNS_entry *old = mylist_entry(&next, DNS_entry, node);
+        free(old); // free掉该条指定条文
         return SUCCUSS;
       }
     }
