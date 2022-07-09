@@ -16,7 +16,7 @@
 #pragma comment(lib,"Ws2_32.lib")
 
 #define ERROR_CODE GetLastError()
-typedef HANDLE thread_t;
+typedef pthread_t thread_t;
 
 #else
 
@@ -31,7 +31,6 @@ typedef HANDLE thread_t;
 #include <errno.h>
 
 typedef int SOCKET;
-typedef pthread_t thread_t;
 
 #define SOCKET_ERROR -1
 #define ERROR_CODE errno
@@ -60,11 +59,11 @@ typedef struct Socket
 
 }Socket;
 
-/* New Thread Create */
+// /* New Thread Create */
 thread_t    threadCreate(void* (*thread_handler)(void*), void* args);
 void        threadExit(size_t sleep_time_ms);
 void        threadDetach(thread_t);
-int         threadJoin(thread_t thread,unsigned long* retVal);
+int         threadJoin(thread_t thread,void** retVal);
 
 /* Thread Lock */
 typedef pthread_rwlock_t rwlock_t;

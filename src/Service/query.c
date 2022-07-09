@@ -40,9 +40,15 @@ int urlQuery(Packet* src)
     for(int i = 0; i < src->QDCOUNT; i++)
     {
         /* Found All Matches */
-        DNS_entry* result;
-        int found = qnameSearch(src->QUESTS[i].QNAME, src->QUESTS[i].QTYPE, &result);
+        DNS_entry* result = NULL;
+        int resource;
+        int found = qnameSearch(src->QUESTS[i].QNAME, src->QUESTS[i].QTYPE, &result, &resource);
         /* Mismatch */
+        if(found == -1){
+            src->ANCOUNT = 0;
+            free(result);
+            return -1;
+        }
         if(found == 0)
         {
             src->ANCOUNT = 0;
@@ -64,14 +70,18 @@ int urlQuery(Packet* src)
             src->ANS[pos + j].ADDITION = result[j].addition;
             src->ANS[pos + j].RDATA = (char*)malloc(TYPE_BUF_SIZE(src->QUESTS[i].QTYPE));
             strcpy(src->ANS[pos + j].RDATA, result[j].ip);
-            DNS_entry_free(&result[j]);
-
+            if(resource == RESOURCE_CACHE)
+            {
+                DNS_entry_free(&result[j]);
+            }
         }
         free(result);
     }
     return src->ANCOUNT;
 }
 
+
+void* file_find_handler(void* args);
 
 
 /**
@@ -84,25 +94,60 @@ int urlQuery(Packet* src)
  * @param urls_num records number
  * @return int query result number
  */
-int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result)
+int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result, int* resource)
 {
     if(qname == NULL) return 0;
 
     DNS_entry* _entry;
     DNS_entry_set(&_entry, qname, NULL, 0, qtype, 0);
-    int ret = LRU_cache_find(_url_cache, _entry, result);
-    thread_t t_num = threadCreate(NULL, NULL);
-    unsigned long local_found;
+
+    DNS_entry* res_1 = NULL, * res_2 = NULL;
+    int* flag = (int*)malloc(sizeof(int));
+    int ret_2 = 0;
+    *flag = 0;
+
+    int ret = LRU_cache_find(_url_cache, _entry, &res_1);
+
+    void* args[] = {&_hash_map,_entry,&res_2,&ret_2,flag};
+    thread_t t_num = threadCreate((void*)file_find_handler, args);
+    void* local_found;
     if(ret == 0)
     {
-        threadJoin(t_num, &local_found);
+        threadJoin(t_num, NULL);
+        consoleLog(DEBUG_L0, BOLDGREEN"> query from host return %d\n", ret_2);
+        if(ret_2 != 0)
+        {
+            *result = res_2;
+        }
+        ret = ret_2;
+        *resource = RESOURCE_HOST;
     }
     else
     {
         threadDetach(t_num);
+        consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret);
+        *result = res_1;
+        *resource = RESOURCE_CACHE;
+
     }
-    consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret);
+
     DNS_entry_free(_entry);
     free(_entry);
     return ret;
+}
+
+
+void* file_find_handler(void* args)
+{
+    hash* map = (hash*)((void**)args)[0];
+    DNS_entry* temp = (DNS_entry*)((void**)args)[1];
+    DNS_entry** result = (DNS_entry**)((void**)args)[2];
+    int* ret = (int*)((void**)args)[3];
+    int* flag = (int*)((void**)args)[4];
+    DNS_entry* entry;
+    DNS_entry_set(&entry, temp->domain_name, temp->ip, 0, temp->type, temp->addition);
+    *ret = file_find(entry, result, map);
+    DNS_entry_free(entry);
+    free(entry);
+    threadExit(1);
 }

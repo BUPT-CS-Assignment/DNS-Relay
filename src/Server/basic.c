@@ -1,10 +1,12 @@
 #include "utils/map.h"
 #include "console.h"
 #include "server.h"
+#include "file.h"
 
 LRU_cache* _url_cache = NULL;
 char _local_dns_addr[64] = "114.114.114.114";
 int          __THREAD__ = 0;
+hash _hash_map;
 
 /**
  * @brief Start dns_realy  server
@@ -29,8 +31,13 @@ void start(Socket* server)
     /* cache service init */
     if(LRU_cache_init(&_url_cache) != LRU_OP_SUCCESS)
     {
-        consoleLog(DEBUG_L0, RED"> cache service error.\n", ntohs(server->_addr.sin_port), ERROR_CODE);
+        consoleLog(DEBUG_L0, RED"> cache service error.\n");
         exit(-1);
+    }
+
+    if(file_init(&_hash_map) != 0)
+    {
+        consoleLog(DEBUG_L0, RED"> no host file.\n");
     }
 
     consoleLog(DEBUG_L0, BOLDWHITE"> cache service start. cache capacity: %d\n", LRU_CACHE_LENGTH);
@@ -180,8 +187,8 @@ void* connectHandle(void* param)
 
 /**
  * @brief debug thread handler
- * 
- * @return void* 
+ *
+ * @return void*
  */
 void* debugHandle()
 {
@@ -210,8 +217,9 @@ void* debugHandle()
             else __DEBUG__ = DEBUG_L0;
             consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);
         }
-        else if(cmd[0] == 't'){
-            consoleLog(DEBUG_L0,BOLDRED"> thread num: %d\n",__THREAD__);
+        else if(cmd[0] == 't')
+        {
+            consoleLog(DEBUG_L0, BOLDRED"> thread num: %d\n", __THREAD__);
         }
         else
         {

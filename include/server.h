@@ -4,6 +4,7 @@
 #include "main.h"
 #include "protocol.h"
 #include "cache.h"
+#include "file.h"
 
 /*----------------------------------- Definitions -----------------------------------*/
 
@@ -15,9 +16,12 @@ extern char _local_dns_addr[64];
 extern Socket _dns_server;      //local dns server
 extern int LRU_CACHE_LENGTH;
 extern LRU_cache* _url_cache;
+extern hash _hash_map;
 
 /* MAX BUFFER SIZE */
 #define BUFFER_SIZE             1024
+#define RESOURCE_CACHE          0
+#define RESOURCE_HOST           1
 
 /* New Thread Args */
 typedef struct thread_args
@@ -48,7 +52,7 @@ void*   debugHandle();
 /* Address Query */
 int     urlStore(Packet*);
 int     urlQuery(Packet*);
-int     qnameSearch(char *qname,uint16_t qtype,DNS_entry** result);
+int     qnameSearch(char *qname,uint16_t qtype,DNS_entry** result,int* resource);
 
 
 /* Packet Handle */
