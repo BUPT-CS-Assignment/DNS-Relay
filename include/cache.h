@@ -50,6 +50,7 @@ int LRU_entry_add(LRU_cache *cache, DNS_entry *entry);
 int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result);
 void LRU_cache_check(LRU_cache *cache);
 int LRU_cache_clean(LRU_cache *cache);
+int LRU_cache_confirm_overtime(LRU_cache *cache);
 
 int insert_one(struct string_hash *map, mylist_head **head, Dptr_in_map *dp);
 int query_list(struct string_hash *map, Dptr_in_map *dp, mylist_head **result);

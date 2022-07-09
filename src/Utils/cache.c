@@ -215,21 +215,7 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
   readLock(&(cache->lock));
   mylist_for_each(p, &cache->head) {
     DNS_entry *entry = mylist_entry(p, DNS_entry, node);
-
-    if (entry->timestamp < time(NULL)) {
-      consoleLog(DEBUG_L1, BOLDRED "> cache record overdue\n");
-      // unlock(&(cache->lock));
-      // writeLock(&(cache->lock));
-
-      p = p->prev;
-      __LRU_list_del(cache, entry);
-      int offset = entry - cache->list;
-      cache->set[offset] = 0;
-      // unlock(&(cache->lock));
-      // readLock(&(cache->lock));
-      cache->length--;
-
-    } else if (strcmp(entry->domain_name, query->domain_name) == 0) {
+    if (strcmp(entry->domain_name, query->domain_name) == 0) {
       if (entry->type == query->type) {
         (*result)[count].domain_name =
             (char *)malloc(strlen(entry->domain_name) + 1);
@@ -253,6 +239,28 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
       threadCreate(__LRU_cache_rotate, cargs); // new thread to rotate
   threadDetach(t_fd);
   return count;
+}
+
+int LRU_cache_confirm_overtime(LRU_cache *cache) {
+  writeLock(&(cache->lock));
+  int flag = 0;
+  mylist_head *p;
+  mylist_for_each(p, &cache->head) {
+    DNS_entry *entry = mylist_entry(p, DNS_entry, node);
+    if (entry->timestamp < time(NULL)) {
+      consoleLog(DEBUG_L1, BOLDRED "> cache record overdue\n");
+      // unlock(&(cache->lock));
+      p = p->prev;
+      __LRU_list_del(cache, entry);
+      int offset = entry - cache->list;
+      cache->set[offset] = 0;
+      // readLock(&(cache->lock));
+      cache->length--;
+      flag = 1;
+    }
+  }
+  unlock(&(cache->lock));
+  return flag;
 }
 
 /**
@@ -360,24 +368,12 @@ int LRU_cache_find_with_hash(LRU_cache *cache, DNS_entry *query,
   mylist_head *p;
   readLock(&(cache->lock));
   Dptr_in_map *dp, *found;
-  int cnt = query_one(map, dp, &found);//这块的cnt没考虑到过期，故返回的不应该是这个值
+  int cnt = query_one(map, dp,
+                      &found); //这块的cnt没考虑到过期，故返回的不应该是这个值
   int count = 0;
   for (int i = 0; i < cnt; i++) {
     DNS_entry *entry = found[i].Dptr;
-    if (entry->timestamp < time(NULL)) {
-      consoleLog(DEBUG_L1, BOLDRED "> cache record overdue\n");
-      // unlock(&(cache->lock));
-      // writeLock(&(cache->lock));
-
-      p = p->prev;
-      __LRU_list_del(cache, entry);
-      delete_one(map, &found[i]);
-      int offset = entry - cache->list;
-      cache->set[offset] = 0;
-      // unlock(&(cache->lock));
-      // readLock(&(cache->lock));
-      cache->length--;
-    } else if (entry->type == query->type) {
+    if (entry->type == query->type) {
       (*result)[i].domain_name = (char *)malloc(strlen(entry->domain_name) + 1);
       strcpy((*result)[i].domain_name, entry->domain_name);
       (*result)[i].ip = (char *)malloc(strlen(entry->ip) + 1);
