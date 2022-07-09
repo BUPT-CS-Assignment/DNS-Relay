@@ -1,6 +1,5 @@
-#include "utils/hash.h"
-
 #include "cache.h"
+#include "utils/hash.h"
 
 /**
  * @description: 为高层使用的支持多个的版本
@@ -70,19 +69,14 @@ int query_one(struct string_hash* map, DNS_entry* entry)
     if(ret == FAILURE)
     {
 
-        return ret;
-    }
-    else
-    {
-        mylist_head* p;
-        mylist_for_each(p, result)
-        {
-            DNS_entry* temp = mylist_entry(p, DNS_entry, node);
-            printf("dn:%s--", entry->domain_name);
-            printf("ip:%s--", entry->ip);
-            printf("type:%d\n\n", entry->type);
-        }
-        return ret;
+    return ret;
+  } else {
+    mylist_head *p;
+    mylist_for_each(p, result) {
+      DNS_entry *temp = mylist_entry(p, DNS_entry, node);
+      printf("dn:%s--", entry->domain_name);
+      printf("ip:%s--", entry->ip);
+      printf("type:%d\n\n", entry->type);
     }
 }
 /**
