@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern hash *map;
+// extern hash *map;
 
 /* --------------------------------- Basic Definition
  * ---------------------------------*/
@@ -287,7 +287,7 @@ int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
     }
     __LRU_list_add(cache, entry, &cache->list[i]);
     mylist_head *head;
-    insert_one(map, &head, entry);
+    //insert_one(map, &head, entry);
     cache->set[i] = 1;
     cache->length++;
   } else {

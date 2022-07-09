@@ -1,12 +1,12 @@
 #include "file.h"
 
-extern hash *map; //默认已有全局变量hash *map
+//extern hash *map; //默认已有全局变量hash *map
 
 /**
  * @description: 初始化所有表里的内容进入内存
  * @return {*}
  */
-int file_init() {
+int file_init(hash* map) {
   FILE *fp = fopen("dnsrelay.txt", "r");
   char buffer[512];
   while (fgets(buffer, sizeof buffer, fp) && !feof(fp)) {
@@ -81,7 +81,7 @@ int file_init() {
  * @param {DNS_entry} **result 查找结果数组的地址，使用前应该只需要声明，查到的结果将会全部保存在此处，是临时动态分配的指针，需要随用随free（不需要深拷贝）
  * @return count 返回查找到条文的数目
  */
-int file_find(DNS_entry *entry, DNS_entry **result) {
+int file_find(DNS_entry *entry, DNS_entry **result, hash *map) {
   mylist_head *res;
   int ret = query_hash(map, entry->domain_name, &res, sizeof(mylist_head *));
   if (ret == FAILURE) {
@@ -103,6 +103,6 @@ int file_find(DNS_entry *entry, DNS_entry **result) {
   return 0;
 }
 
-int file_free() {
+int file_free(hash *map) {
   free_hash(map); // free_node() modified
 }
