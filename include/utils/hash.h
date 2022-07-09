@@ -1,10 +1,11 @@
 #ifndef __HASH__
 #define __HASH__
 
+#include <cache.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #define BUCKET_SIZE 1024
 #define SUCCUSS  0

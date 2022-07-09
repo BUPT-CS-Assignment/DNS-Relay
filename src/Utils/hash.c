@@ -17,12 +17,10 @@ static hash_node *make_node(const void *_key, size_t _k_len, void *_value,
   node->key_s = _k_len;
   node->val_s = _v_len;
 
-  memcpy(node->key, _key, _k_len);
-  memcpy(node->value, _value, _v_len);
-
-  //	printf("%s -- %lu\n" , (char*)node->value , _v_len);
-
-  return node;
+	memcpy(node->key   , _key 	, _k_len);
+	memcpy(node->value , _value , _v_len);
+	
+	return node;
 }
 
 static void modify_node(hash_node *node, void *_value, size_t _v_len) {
