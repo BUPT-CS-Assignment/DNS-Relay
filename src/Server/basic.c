@@ -37,7 +37,8 @@ void start(Socket* server)
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
     consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n", _local_dns_addr);
 
-    threadCreate(debugHandle, NULL);
+    thread_t t_fd = threadCreate(debugHandle, NULL);
+    threadDetach(t_fd);
 
     setTimeOut(server, 2, 0);
 
@@ -62,7 +63,8 @@ void start(Socket* server)
 
             if(args->buf_len > 0)
             {
-                threadCreate(connectHandle, (void*)args);
+                thread_t t_num = threadCreate(connectHandle, (void*)args);
+                threadDetach(t_num);
             }
             else
             {

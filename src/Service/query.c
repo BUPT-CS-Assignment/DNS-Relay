@@ -91,6 +91,16 @@ int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result)
     DNS_entry* _entry;
     DNS_entry_set(&_entry, qname, NULL, 0, qtype, 0);
     int ret = LRU_cache_find(_url_cache, _entry, result);
+    thread_t t_num = threadCreate(NULL, NULL);
+    unsigned long local_found;
+    if(ret == 0)
+    {
+        threadJoin(t_num, &local_found);
+    }
+    else
+    {
+        threadDetach(t_num);
+    }
     consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret);
     DNS_entry_free(_entry);
     free(_entry);

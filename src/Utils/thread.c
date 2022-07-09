@@ -7,31 +7,42 @@
  * @param thread_handler thread handler function
  * @param args thread handler function params
  */
-void threadCreate(void*(*thread_handler)(void*) ,void* args){
+thread_t threadCreate(void*(*thread_handler)(void*) ,void* args){
     /* new thread create */
+    thread_t thread;
 
 #ifdef _WIN32
-    HANDLE thread;
     thread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)thread_handler,args,0,NULL);
     if(thread == NULL){
         printf("> thread create failed. code %d\n",GetLastError());
         free(args);
     }
-    CloseHandle(thread);
 
 #else
     /* pthread args */
-    pthread_t pt;
-    pthread_attr_t attr;
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
-    int ret = pthread_create(&pt, &attr, connectHandle, (void*)args);
+    // pthread_attr_t attr;
+    // pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //thread detached
+    int ret = pthread_create(&thread, NULL, connectHandle, (void*)args);
     if(ret != 0){
         printf("> thread create failed. code %d\n",ret);
         free(args);
     }
 #endif
     ++ __THREAD__;
-    printf("thread num: %d\n",__THREAD__);
+    printf("> thread num: %d\n",__THREAD__);
+
+    return thread;
+}
+
+
+void threadDetach(thread_t thread){
+
+#ifdef _WIN32
+    CloseHandle(thread);
+#else
+    pthread_detach(thread);
+#endif
+
 }
 
 
@@ -51,6 +62,24 @@ void threadExit(size_t time_ms){
         pthread_exit(0);
 #endif
     
+
+}
+
+
+
+int threadJoin(thread_t thread,unsigned long* retVal){
+    int ret;
+
+#ifdef _WIN32
+    ret = WaitForSingleObject(thread,INFINITE);
+    if(ret == WAIT_FAILED)  return ret;
+    GetExitCodeThread(thread,(LPDWORD)retVal);
+#else 
+    ret = pthread_join(thread,&retVal);
+
+#endif
+
+    return ret;
 
 }
 
