@@ -5,8 +5,11 @@
 
 LRU_cache* _url_cache = NULL;
 char _local_dns_addr[64] = "114.114.114.114";
-int          __THREAD__ = 0;
+int  __THREAD__ = 0;
+int  _cache_scan_period = 30;
 hash _hash_map;
+
+void* cacheScanHandle();
 
 /**
  * @brief Start dns_realy  server
@@ -44,8 +47,9 @@ void start(Socket* server)
     consoleLog(DEBUG_L0, BOLDWHITE"> server start. debug level L%d\n", __DEBUG__);
     consoleLog(DEBUG_L0, BOLDWHITE"> local dns server: %s\n", _local_dns_addr);
 
-    thread_t t_fd = threadCreate(debugHandle, NULL);
-    threadDetach(t_fd);
+    threadDetach(threadCreate(cacheScanHandle, NULL));
+
+    threadDetach(threadCreate(debugHandle, NULL));
 
     setTimeOut(server, 2, 0);
 
@@ -149,11 +153,20 @@ void* connectHandle(void* param)
 
             /* add to map */
             uint16_t converted = addToMap(p->ID, &args->connect._addr);
-            SET_ID(args->buf, &converted);
 
-            /* send to dns server */
-            ret = sendto(server->_fd, args->buf, args->buf_len, 0, (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
+            if(converted == UINT16_MAX)
+            {
+                consoleLog(DEBUG_L0, RED"> relay service busy.\n");
+                ret = 0;
+            }
+            else
+            {
+                SET_ID(args->buf, &converted);
 
+                /* send to dns server */
+                ret = sendto(server->_fd, args->buf, args->buf_len, 0,
+                    (struct sockaddr*)&_dns_server._addr, sizeof(struct sockaddr));
+            }
         }
         else
         {
@@ -164,7 +177,8 @@ void* connectHandle(void* param)
             char* buff = responseFormat(&buff_len, p);
 
             /* send back to client */
-            ret = sendto(server->_fd, buff, buff_len, 0, (struct sockaddr*)&args->connect._addr, sizeof(args->connect._addr));
+            ret = sendto(server->_fd, buff, buff_len, 0,
+                (struct sockaddr*)&args->connect._addr, sizeof(args->connect._addr));
             free(buff);
         }
     }
@@ -183,7 +197,23 @@ void* connectHandle(void* param)
     threadExit(1);
 }
 
+void* cacheScanHandle()
+{
+    while(1)
+    {
 
+#ifdef _WIN32
+        Sleep(1000 * _cache_scan_period);
+#else
+        sleep(_cache_scan_period);
+#endif
+
+        if(LRU_cache_confirm_overtime(_url_cache) == 0)
+        {
+            consoleLog(DEBUG_L1, "> no overdue record.\n");
+        }
+    }
+}
 
 /**
  * @brief debug thread handler
