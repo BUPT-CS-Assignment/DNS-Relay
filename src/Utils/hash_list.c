@@ -21,7 +21,7 @@ void insert_hash_list(
 {
 	// 如果key已经存在，则插入到对应链表的尾部
 	// 注意给定的_new是一个指针，表示将该指针对应的内存空间加入到哈希表中
-	if(insert_hash(map , key , _new , sizeof(*_new)) == FAILURE) {
+	if (insert_hash(map , key , _new , sizeof(*_new)) == FAILURE) {
 		payload target;
 
 		// 返回临时的查询结果：链表头部
