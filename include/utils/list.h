@@ -182,6 +182,10 @@ static inline int mylist_empty(const mylist_head* head)
     return (next == head) && (next == head->prev);
 }
 
+static inline int mylist_is_singular(const mylist_head *head) {
+  return !mylist_empty(head) && (head->next == head->prev);
+}
+
 /**
  * @description:
  * 把某一指定节点旋转至链表的最前，使用时应注意node属于head对应的链表

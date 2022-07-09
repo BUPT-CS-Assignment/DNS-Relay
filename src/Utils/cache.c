@@ -1,4 +1,4 @@
-#include "cache.h"
+#include <cache.h>
 #include "console.h"
 
 
@@ -206,7 +206,7 @@ void LRU_cache_check(LRU_cache* cache){
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
         printf(BOLDBLUE"- SERIAL= %d\n"RESET,i++);
         printf("  DN= '%s'\n  RECORD= '%s'\n",entry->domain_name,entry->ip);
-        printf("  TYPE= %d   TIMESTAMP= %lld",entry->type,entry->timestamp);
+        printf("  TYPE= %d   TIMESTAMP= %ld",entry->type,entry->timestamp);
         if(entry->type == TYPE_MX){
             printf("   PREF= %d",entry->addition);
         }
