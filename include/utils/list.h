@@ -220,8 +220,4 @@ static inline void mylist_rotate_node_tail(mylist_head* node,
     }
 }
 
-static inline int mylist_is_singular(const mylist_head *head) {
-  return !mylist_empty(head) && (head->next == head->prev);
-}
-
 #endif
