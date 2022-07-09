@@ -78,6 +78,7 @@ int query_one(struct string_hash* map, DNS_entry* entry)
       printf("ip:%s--", entry->ip);
       printf("type:%d\n\n", entry->type);
     }
+  }
 }
 /**
  * @description: 从哈希桶里删除某一条文的内容
