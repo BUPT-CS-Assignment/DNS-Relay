@@ -1,8 +1,4 @@
-#include "cache.h"
-#include "protocol.h"
-#include "utils/hash.h"
-#include <stdlib.h>
-#include <string.h>
+#include "file.h"
 
 extern hash *map; //默认已有全局变量hash *map
 
@@ -71,7 +67,7 @@ int file_init() {
       head = malloc(sizeof(mylist_head));
       INIT_MY_LIST_HEAD(head);
       mylist_add_head(&entry->node, head);
-      insert_hash(map, entry->domain_name, &head, sizeof(DNS_entry *));
+      insert_hash(map, entry->domain_name, &head, sizeof(mylist_head *));
     }
   }
   count_hash(map);
@@ -79,22 +75,34 @@ int file_init() {
   return 0;
 }
 
-int file_find(DNS_entry *entry, mylist_head *result) {
-  int ret = query_hash(map, entry->domain_name, &result, sizeof(DNS_entry *));
+/**
+ * @description: 提供给上层的查找函数
+ * @param {DNS_entry} *entry 要查找的条文类型
+ * @param {DNS_entry} **result 查找结果数组的地址，使用前应该只需要声明，查到的结果将会全部保存在此处，是临时动态分配的指针，需要随用随free（不需要深拷贝）
+ * @return count 返回查找到条文的数目
+ */
+int file_find(DNS_entry *entry, DNS_entry **result) {
+  mylist_head *res;
+  int ret = query_hash(map, entry->domain_name, &res, sizeof(mylist_head *));
   if (ret == FAILURE) {
-    result = NULL;
+    *result = NULL;
     return 0;
   } else {
-    // mylist_head *p;
-    // mylist_for_each(p, result) {
-    //   DNS_entry* temp = mylist_entry(p, DNS_entry, node);
-    //   printf("ip:%s\n", temp->ip);
-    // }
-    return 1;
+    mylist_head *p;
+    int count = 0;
+    mylist_for_each(p, res) { count++; }
+    *result = malloc(sizeof(DNS_entry) * (count + 1)); //+1只是防止一些奇怪情况
+    int i = 0;
+    mylist_for_each(p, res) {
+      DNS_entry *temp = mylist_entry(p, DNS_entry, node);
+      memcpy(&(*result)[i], temp, sizeof(DNS_entry));
+      i++;
+    }
+    return count;
   }
   return 0;
 }
 
 int file_free() {
-  free_hash(map);//free_node() modified
+  free_hash(map); // free_node() modified
 }
