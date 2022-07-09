@@ -287,7 +287,7 @@ int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
     }
     __LRU_list_add(cache, entry, &cache->list[i]);
     mylist_head *head;
-    //insert_one(map, &head, entry);
+    // insert_one(map, &head, entry);
     cache->set[i] = 1;
     cache->length++;
   } else {
@@ -315,4 +315,88 @@ int LRU_cache_clean(LRU_cache *cache) {
   INIT_MY_LIST_HEAD(&cache->head);
   cache->length = 0;
   return 0;
+}
+
+int LRU_entry_add_with_hash(LRU_cache *cache, DNS_entry *entry, hash *map) {
+  writeLock(&(cache->lock));
+  if (cache->length < LRU_CACHE_LENGTH) {
+    int i;
+    for (i = 0; i < LRU_CACHE_LENGTH; i++) {
+      if (cache->set[i] == 0) {
+        break;
+      }
+    }
+    __LRU_list_add(cache, entry, &cache->list[i]);
+    mylist_head *head;
+    Dptr_in_map *dp = malloc(sizeof(Dptr_in_map));
+    dp->Dptr = entry;
+    insert_one(map, &head, dp);
+    cache->set[i] = 1;
+    cache->length++;
+  } else {
+    //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
+    DNS_entry *tail = mylist_entry(cache->head.prev, DNS_entry, node);
+    if (mylist_is_last(&tail->node, &cache->head)) {
+      Dptr_in_map *dp = malloc(sizeof(Dptr_in_map));
+      dp->Dptr = tail;
+      delete_one(map, dp);
+      __LRU_list_del(cache, tail);
+      __LRU_list_add(cache, entry, tail);
+      dp->Dptr = tail;
+      mylist_head *head;
+      insert_one(map, &head, dp);
+    }
+  }
+  unlock(&(cache->lock));
+
+  return LRU_OP_SUCCESS;
+}
+
+int LRU_cache_find_with_hash(LRU_cache *cache, DNS_entry *query,
+                             DNS_entry **result, hash *map) {
+  *result = (DNS_entry *)malloc(sizeof(DNS_entry) * LRU_CACHE_LENGTH);
+  DNS_entry **temp =
+      (DNS_entry **)malloc(sizeof(DNS_entry *) * LRU_CACHE_LENGTH);
+  mylist_head *p;
+  readLock(&(cache->lock));
+  Dptr_in_map *dp, *found;
+  int cnt = query_one(map, dp, &found);//这块的cnt没考虑到过期，故返回的不应该是这个值
+  int count = 0;
+  for (int i = 0; i < cnt; i++) {
+    DNS_entry *entry = found[i].Dptr;
+    if (entry->timestamp < time(NULL)) {
+      consoleLog(DEBUG_L1, BOLDRED "> cache record overdue\n");
+      // unlock(&(cache->lock));
+      // writeLock(&(cache->lock));
+
+      p = p->prev;
+      __LRU_list_del(cache, entry);
+      delete_one(map, &found[i]);
+      int offset = entry - cache->list;
+      cache->set[offset] = 0;
+      // unlock(&(cache->lock));
+      // readLock(&(cache->lock));
+      cache->length--;
+    } else if (entry->type == query->type) {
+      (*result)[i].domain_name = (char *)malloc(strlen(entry->domain_name) + 1);
+      strcpy((*result)[i].domain_name, entry->domain_name);
+      (*result)[i].ip = (char *)malloc(strlen(entry->ip) + 1);
+      strcpy((*result)[i].ip, entry->ip);
+      (*result)[i].type = entry->type;
+      (*result)[i].timestamp = entry->timestamp;
+      (*result)[i].addition = entry->addition;
+      temp[i] = entry;
+      count++;
+    }
+  }
+  free(found);
+  unlock(&(cache->lock));
+  cache_args *cargs = (cache_args *)malloc(sizeof(cache_args));
+  cargs->cache = cache;
+  cargs->count = count;
+  cargs->temp_array = temp;
+  thread_t t_fd =
+      threadCreate(__LRU_cache_rotate, cargs); // new thread to rotate
+  threadDetach(t_fd);
+  return count;
 }
