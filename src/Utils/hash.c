@@ -21,9 +21,6 @@ static hash_node* make_node(
 	memcpy(node->key   , _key 	, _k_len);
 	memcpy(node->value , _value , _v_len);
 	
-
-		//	printf("%s -- %lu\n" , (char*)node->value , _v_len);
-
 	return node;
 }
 
