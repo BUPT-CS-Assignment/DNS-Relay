@@ -1,3 +1,6 @@
+#ifndef __LIST__
+#define __LIST__
+
 #include <stddef.h>
 
 /**
@@ -212,3 +215,6 @@ static inline void mylist_rotate_node_tail(mylist_head* node,
         mylist_move_tail(node, head);
     }
 }
+
+
+#endif
