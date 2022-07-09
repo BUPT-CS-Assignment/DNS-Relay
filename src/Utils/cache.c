@@ -272,7 +272,8 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
     cargs->cache = cache;
     cargs->count = count;
     cargs->temp_array = temp;
-    threadCreate(__LRU_cache_rotate, cargs);         //new thread to rotate
+    thread_t t_fd = threadCreate(__LRU_cache_rotate, cargs);         //new thread to rotate
+    threadDetach(t_fd);
     return count;
 }
 
