@@ -1,3 +1,6 @@
+#ifndef __CACHE__
+#define __CACHE__
+
 #include "utils/list.h"
 #include "main.h"
 #include "protocol.h"
@@ -44,3 +47,6 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry);
 int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result);
 void LRU_cache_check(LRU_cache *cache);
 int LRU_cache_clean(LRU_cache *cache);
+
+
+#endif

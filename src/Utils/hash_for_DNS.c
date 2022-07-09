@@ -11,11 +11,12 @@
  */
 int insert_one(struct string_hash* map, mylist_head** head, DNS_entry* entry)
 {
+	// **head-> *head->  malloc mem
     *head = (mylist_head*)malloc(sizeof(mylist_head));
     INIT_MY_LIST_HEAD(*head);
     mylist_add_head(&entry->node, *head);
-    int ret = insert_hash(map, entry->domain_name, head,
-        sizeof(mylist_head*)); //只存一个指针，即head
+    int ret = insert_hash(map, entry->domain_name, head ,sizeof(mylist_head*)); //只存一个指针，即head
+	
     if(ret == SUCCUSS)
     {
         return ret;
@@ -41,18 +42,12 @@ int insert_one(struct string_hash* map, mylist_head** head, DNS_entry* entry)
  * @param {mylist_head} *result 地址将被保存在这里以用于调用
  * @return {*}
  */
-int query_list(struct string_hash* map, DNS_entry* entry, mylist_head* result)
+int query_list(struct string_hash* map, DNS_entry* entry, mylist_head** result)
 {
-    int ret = query_hash(map, entry->domain_name, &result, sizeof(mylist_head*));
-    if(ret == FAILURE)
-    {
-        result = NULL;
-        return ret;
-    }
-    else
-    {
-        return SUCCUSS;
-    }
+    int ret = query_hash(map, entry->domain_name, result, sizeof(mylist_head*));
+    if(ret == FAILURE) *result = NULL;
+	
+	return ret;
 }
 
 /**
@@ -65,20 +60,31 @@ int query_list(struct string_hash* map, DNS_entry* entry, mylist_head* result)
 int query_one(struct string_hash* map, DNS_entry* entry)
 {
     mylist_head* result;
-    int ret = query_list(map, entry, result);
-    if(ret == FAILURE)
-    {
+    int ret = query_list(map, entry, &result);
 
-    return ret;
-  } else {
-    mylist_head *p;
-    mylist_for_each(p, result) {
-      DNS_entry *temp = mylist_entry(p, DNS_entry, node);
-      printf("dn:%s--", entry->domain_name);
-      printf("ip:%s--", entry->ip);
-      printf("type:%d\n\n", entry->type);
+    if (ret == SUCCUSS)
+    {
+        mylist_head* p;
+        mylist_for_each(p, result)
+        {
+            DNS_entry* temp = mylist_entry(p, DNS_entry, node);
+			
+			if ( !memcmp(temp , entry , sizeof(DNS_entry))  ) {
+				return SUCCUSS;
+			}
+			
+            printf("dn:%s--", temp->domain_name);
+            printf("ip:%s--", temp->ip);
+            printf("type:%d\n\n", temp->type);
+        }
+		
+		ret = FAILURE;
     }
+<<<<<<< HEAD:src/Utils/hash_for_DNS
   }
+=======
+	return ret;
+>>>>>>> refs/remotes/origin/main:src/Utils/hash_for_DNS.c
 }
 /**
  * @description: 从哈希桶里删除某一条文的内容
@@ -90,7 +96,7 @@ int delete_one(struct string_hash* map, DNS_entry* entry)
 {
     mylist_head* head;
     int ret = query_hash(map, entry->domain_name, &head, sizeof(mylist_head*));
-    if(ret = FAILURE)
+    if(ret == FAILURE)
     {
         return ret;
     }
