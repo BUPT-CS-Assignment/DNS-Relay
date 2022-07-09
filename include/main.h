@@ -6,19 +6,19 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <pthread.h>
 
 #ifdef _WIN32
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <pthread.h>
+
 #pragma comment(lib,"Ws2_32.lib")
 
 #define ERROR_CODE GetLastError()
 
 #else
 
-#include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>

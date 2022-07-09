@@ -70,8 +70,8 @@ int DNS_entry_set(DNS_entry** ptr, char* name, char* ip, uint32_t ttl, uint8_t t
 void DNS_entry_free(DNS_entry* entry)
 {
     if(entry == NULL)   return;
-    free(entry->domain_name);
-    free(entry->ip);
+    free(entry->domain_name);   entry->domain_name = NULL;
+    free(entry->ip);            entry->ip = NULL;
 }
 
 
