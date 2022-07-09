@@ -1,6 +1,13 @@
 #include "console.h"
+#include "file.h"
+#include "utils/hash.h"
 #include "utils/list.h"
 #include <cache.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+extern hash *map;
 
 /* --------------------------------- Basic Definition
  * ---------------------------------*/
@@ -148,7 +155,10 @@ void *__LRU_cache_rotate(void *param) {
 int LRU_cache_init(LRU_cache **cptr) {
   *cptr = (LRU_cache *)malloc(sizeof(LRU_cache));
   (*cptr)->list = (DNS_entry *)malloc(sizeof(DNS_entry) * LRU_CACHE_LENGTH);
+  (*cptr)->set = malloc(sizeof(uint8_t) * LRU_CACHE_LENGTH);
+  memset((*cptr)->set, 0, sizeof(uint8_t) * LRU_CACHE_LENGTH);
   INIT_MY_LIST_HEAD(&(*cptr)->head);
+
   (*cptr)->length = 0;
   lockInit(&(*cptr)->lock);
   return LRU_OP_SUCCESS;
@@ -213,7 +223,8 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
 
       p = p->prev;
       __LRU_list_del(cache, entry);
-
+      int offset = entry - cache->list;
+      cache->set[offset] = 0;
       // unlock(&(cache->lock));
       // readLock(&(cache->lock));
       cache->length--;
@@ -253,12 +264,34 @@ int LRU_cache_find(LRU_cache *cache, DNS_entry *query, DNS_entry **result) {
  */
 int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
   writeLock(&(cache->lock));
-  if (cache->length <
-      LRU_CACHE_LENGTH) { //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
-    __LRU_list_add(cache, entry, &cache->list[cache->length]);
+  // if (cache->length <
+  //     LRU_CACHE_LENGTH) {
+  //     //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
+  //   __LRU_list_add(cache, entry, &cache->list[cache->length]);
 
+  //   cache->length++;
+  // } else {
+  // //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
+  //   DNS_entry *tail = mylist_entry(cache->head.prev, DNS_entry, node);
+  //   if (mylist_is_last(&tail->node, &cache->head)) {
+  //     __LRU_list_del(cache, tail);
+  //     __LRU_list_add(cache, entry, tail);
+  //   }
+  // }
+  if (cache->length < LRU_CACHE_LENGTH) {
+    int i;
+    for (i = 0; i < LRU_CACHE_LENGTH; i++) {
+      if (cache->set[i] == 0) {
+        break;
+      }
+    }
+    __LRU_list_add(cache, entry, &cache->list[i]);
+    mylist_head *head;
+    insert_one(map, &head, entry);
+    cache->set[i] = 1;
     cache->length++;
-  } else { //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
+  } else {
+    //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
     DNS_entry *tail = mylist_entry(cache->head.prev, DNS_entry, node);
     if (mylist_is_last(&tail->node, &cache->head)) {
       __LRU_list_del(cache, tail);
@@ -269,6 +302,7 @@ int LRU_entry_add(LRU_cache *cache, DNS_entry *entry) {
 
   return LRU_OP_SUCCESS;
 }
+
 int LRU_cache_clean(LRU_cache *cache) {
   for (int i = 0; i < cache->length; i++) {
     free(cache->list[i].domain_name);
@@ -277,6 +311,7 @@ int LRU_cache_clean(LRU_cache *cache) {
     cache->list[i].ip = NULL;
     mylist_del(&cache->list[i].node);
   }
+  memset(cache->set, 0, sizeof(uint8_t) * LRU_CACHE_LENGTH);
   INIT_MY_LIST_HEAD(&cache->head);
   cache->length = 0;
   return 0;

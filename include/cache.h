@@ -2,8 +2,10 @@
 #define __CACHE__
 
 #include "utils/list.h"
+#include "utils/hash.h"
 #include "main.h"
 #include "protocol.h"
+#include <stdint.h>
 
 
 extern int LRU_CACHE_LENGTH;
@@ -34,6 +36,7 @@ typedef struct
     DNS_entry* list;
     mylist_head head;
     int length;
+    uint8_t *set;
     rwlock_t lock;
 } LRU_cache;
 
@@ -48,5 +51,8 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result);
 void LRU_cache_check(LRU_cache *cache);
 int LRU_cache_clean(LRU_cache *cache);
 
-
+int insert_one(struct string_hash *map, mylist_head **head, DNS_entry *entry);
+int query_list(struct string_hash *map, DNS_entry *entry, mylist_head **result);
+int query_one(struct string_hash *map, DNS_entry *entry, DNS_entry **found);
+int delete_one(struct string_hash *map, DNS_entry *entry);
 #endif
