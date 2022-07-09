@@ -9,12 +9,12 @@
  * @param {DNS_entry} *entry 要存入的条文，这里假定它已经被上层malloc过
  * @return {*}
  */
-int insert_one(struct string_hash* map, mylist_head* head, DNS_entry* entry)
+int insert_one(struct string_hash* map, mylist_head** head, DNS_entry* entry)
 {
-    head = (mylist_head*)malloc(sizeof(mylist_head));
-    INIT_MY_LIST_HEAD(head);
-    mylist_add_head(&entry->node, head);
-    int ret = insert_hash(map, entry->domain_name, &head,
+    *head = (mylist_head*)malloc(sizeof(mylist_head));
+    INIT_MY_LIST_HEAD(*head);
+    mylist_add_head(&entry->node, *head);
+    int ret = insert_hash(map, entry->domain_name, head,
         sizeof(mylist_head*)); //只存一个指针，即head
     if(ret == SUCCUSS)
     {
@@ -28,8 +28,8 @@ int insert_one(struct string_hash* map, mylist_head* head, DNS_entry* entry)
         mylist_move_head(&entry->node, temp);
         //修改链表顺序，现在这个动态分配的entry就会被存进链表里可供查询
         //理论上来说不用改哈希桶里的值？哈希桶只是存链表dummy头节点的地址值，我把地址值取出来修改地址对应的内存内容而已，地址没有变化
-        free(head);
-        head = temp;
+        free(*head);
+        *head = temp;
         return SUCCUSS;
     }
 }
