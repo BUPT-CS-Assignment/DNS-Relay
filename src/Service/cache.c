@@ -204,26 +204,65 @@ int cacheFree(LRU_cache* cache)
 
 
 
-void cacheCheck(LRU_cache* cache)
+int cacheOutput(LRU_cache* cache)
 {
+    printf(BOLDMAGENTA"> cache records output.\n");
+    FILE* fp = fopen("cache.txt", "w");
+    if(fp == NULL)
+    {
+        printf(BOLDRED"> file create failed.\n");
+        return -1;
+    }
     mylist_head* p;
-    printf(BOLDRED "> cache check\n" RESET);
+    fprintf(fp,"*** Cache Records ***\n");
+
     readLock(&(cache->lock));
-    int i = 0;
+    fprintf(fp,"Total Length: %d\n\n", cache->length);
     mylist_for_each(p, &cache->head)
     {
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
-        printf(BOLDBLUE "- SERIAL= %d\n" RESET, i++);
-        printf("  DN= '%s'\n  RECORD= '%s'\n", entry->domain_name, entry->ip);
-        printf("  TYPE= %d   TIMESTAMP= %ld", entry->type, entry->timestamp);
+        fprintf(fp,"  %s\n",entry->domain_name);
+        fprintf(fp,"  --------------------------\n");
+        fprintf(fp,"  RR. . . . . : %s\n", entry->ip);
+        fprintf(fp,"  type. . . . : %d\n", entry->type);
+        fprintf(fp,"  ttl . . . . : %d\n", entry->timestamp - time(NULL));
         if(entry->type == TYPE_MX)
         {
-            printf("   PREF= %d", entry->addition);
+            fprintf(fp,"  pref. . . . : %d\n", entry->addition);
+        }
+        fprintf(fp,"\n");
+    }
+    
+    unlock(&(cache->lock));
+    fclose(fp);
+    printf(BOLDGREEN "> output ok. check 'cache.txt'.\n");
+    return 0;
+}
+
+
+void cacheCheck(LRU_cache* cache)
+{
+    mylist_head* p;
+    printf(BOLDMAGENTA "> cache check\n" RESET);
+    readLock(&(cache->lock));
+
+    mylist_for_each(p, &cache->head)
+    {
+        DNS_entry* entry = mylist_entry(p, DNS_entry, node);
+        printf("  %s\n",entry->domain_name);
+        printf("  ---------------------------\n");
+        printf("  RR. . . . . : %s\n", entry->ip);
+        printf("  type. . . . : %d\n", entry->type);
+        printf("  ttl . . . . : %d\n", entry->timestamp - time(NULL));
+        if(entry->type == TYPE_MX)
+        {
+            printf("  pref. . . . : %d\n", entry->addition);
         }
         printf("\n");
     }
     unlock(&(cache->lock));
-    printf(BOLDRED "> check end\n");
+    printf(BOLDBLUE"Total Length: %d\n"RESET, cache->length);
+    printf(BOLDGREEN "> check end\n"RESET);
 }
 
 
@@ -289,7 +328,7 @@ int cacheScan(LRU_cache* cache)
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
         if(entry->timestamp < time(NULL))
         {
-            consoleLog(DEBUG_L1, BOLDRED "> cache record overdue.\n");
+            consoleLog(DEBUG_L1, BOLDYELLOW "> cache record overdue.\n");
             p = p->prev;
             __LRU_list_del(cache, entry);
             int offset = entry - cache->list;

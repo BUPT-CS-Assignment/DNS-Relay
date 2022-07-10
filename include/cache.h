@@ -37,14 +37,14 @@ typedef struct
 
 
 /*函数声明部分*/
-int DNS_entry_set(DNS_entry** ptr, char* name, char* ip, uint32_t ttl,
-    uint8_t type, uint16_t addition);
+int DNS_entry_set(DNS_entry** ptr, char* name, char* ip, uint32_t ttl, uint8_t type, uint16_t addition);
 void DNS_entry_free(DNS_entry* entry);
 int cacheInit(LRU_cache** ptr);
 int cacheFree(LRU_cache* cache);
 int cacheInsert(LRU_cache* cache, DNS_entry* entry);
 int cacheQuery(LRU_cache* cache, DNS_entry* query, DNS_entry** result);
 void cacheCheck(LRU_cache* cache);
+int cacheOutput(LRU_cache* cache);
 int cacheFlush(LRU_cache* cache);
 int cacheScan(LRU_cache* cache);
 
