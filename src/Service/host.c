@@ -20,15 +20,12 @@ int hostInit(hash* map)
         char* key = strtok(NULL, "\n");
 
         /*现在假定val是某域名对应的ip*/
-        DNS_entry* entry = (DNS_entry*)malloc(sizeof(DNS_entry));
-        entry->domain_name = malloc(STRMEM(key));
-        entry->ip = malloc(STRMEM(val));
-        memcpy(entry->domain_name, key, STRMEM(key));
-        memcpy(entry->ip, val, STRMEM(val));
-
-        entry->type = TYPE_A; //一定吗？
-        entry->timestamp = 0;
-        entry->addition = 0;
+        DNS_entry* entry;
+        DNS_entry_set(&entry, key, val, 0, TYPE_A, 0);
+        if(strchr(val, ':') != NULL)
+        {
+            entry->type = TYPE_AAAA;
+        }
 
         mylist_head* head;
 

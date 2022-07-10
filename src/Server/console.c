@@ -29,13 +29,13 @@ void consoleParse(int argc, char* argv[])
                 __CACHE_LEN__ = atoi(argv[i] + 2);
             }
         }
-        else if(argv[i][0] == '=' && len >= 2)
-        {
-            strcpy(__LOCAL_DNS_ADDR__, argv[i] + 1);   //local dns server address
-        }
         else if(argv[i][0] == ':' && len >= 2)
         {
-            strcpy(__HOST_DEST__, argv[i] + 1);
+            strcpy(__LOCAL_DNS_ADDR__, argv[i] + 1);    //local dns server address
+        }
+        else if(argv[i][0] == '+' && len >= 2)
+        {
+            strcpy(__HOST_DEST__, argv[i] + 1);         //host file directory
         }
     }
 
@@ -84,37 +84,37 @@ void* debugHandle()
             if(cmd[1] == '2') __DEBUG__ = DEBUG_L2;
             else if(cmd[1] == '1') __DEBUG__ = DEBUG_L1;
             else __DEBUG__ = DEBUG_L0;
-            consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);
+            consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);  //reset debug level
         }
         else if(cmd[0] == 't')
         {
-            consoleLog(DEBUG_L0, BOLDRED"> thread num: %d\n", __THREAD__);
+            consoleLog(DEBUG_L0, BOLDRED"> thread num: %d\n", __THREAD__);  //check thread number
         }
         else if(strcmp(cmd, "cache-c") == 0)
         {
-            cacheCheck(__URL_CACHE__);
+            cacheCheck(__URL_CACHE__);              //check cache content
         }
         else if(strcmp(cmd, "flush") == 0)
         {
-            cacheFlush(__URL_CACHE__);
+            cacheFlush(__URL_CACHE__);              //flush cache content
         }
         else if(strcmp(cmd, "cache-o") == 0)
         {
-            cacheOutput(__URL_CACHE__);
+            cacheOutput(__URL_CACHE__);             //output cache content to file
         }
         else if(strncmp(cmd, "cache-s", 7) == 0 && strlen(cmd) >= 6)
         {
-            int time = atoi((char*)cmd + 8);
+            int time = atoi((char*)cmd + 8);        //reset cache scan time
             __CACHE_SCAN_TIME__ = (time > 30 ? time : 30);
-            consoleLog(DEBUG_L0, BOLDRED"> cache scan period: %ds\n", __CACHE_SCAN_TIME__);
+            consoleLog(DEBUG_L0, BOLDRED"> cache scan period: %ds\n", __CACHE_SCAN_TIME__); 
         }
         else if(strncmp(cmd, "server", 6) == 0)
         {
-            uint32_t res = inet_addr((char*)cmd + 7);
+            uint32_t res = inet_addr((char*)cmd + 7);   //reset dns server addr
             if(res != INADDR_NONE)
             {
                 __DNS_SERVER__._addr.sin_addr.s_addr = res;
-                consoleLog(DEBUG_L0, BOLDCYAN"> local dns server reset: %s\n", (char*)cmd + 7);
+                consoleLog(DEBUG_L0, BOLDCYAN"> local dns server reset: %s\n", (char*)cmd + 7); 
             }
         }
         else

@@ -59,7 +59,6 @@ Packet* packetParse(uint8_t* buf, int len)
     |                    ARCOUNT                    |
     +-----------------------------------------------+
     */
-    //memcpy(&dest->ID, buf, sizeof(uint16_t));
     dest->ID = GET_ID(buf);
     dest->FLAGS = ntohs(*((uint16_t*)(buf + 2)));
     dest->QDCOUNT = ntohs(*((uint16_t*)(buf + 4)));
@@ -125,7 +124,6 @@ Packet* packetParse(uint8_t* buf, int len)
         /* Set Basic Info */
         dest->ANS[i].NAME = *(uint16_t*)buf_pos;
         dest->ANS[i].QPOS = 0;
-        //(i == 0 ? 0 : (dest->ANS[i].NAME == dest->ANS[i - 1].NAME ? name_qpos : ++name_qpos));
         dest->ANS[i].TYPE = ntohs(*(uint16_t*)(buf_pos + 2));
         dest->ANS[i].CLASS = ntohs(*(uint16_t*)(buf_pos + 4));
         dest->ANS[i].TTL = ntohl(*(uint32_t*)(buf_pos + 6));
@@ -159,7 +157,7 @@ char* responseFormat(int* len, Packet* src)
     /* Set Flags
      0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
     +--+-----------+--+--+--+--+--------+-----------+
-    |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
+    |QR|   Opcode  |AA|TC|RD|RA|Z |AD|CD|   RCODE   |
     +--+-----------+--+--+--+--+--------+-----------+
     */
     uint16_t flag = src->FLAGS;
@@ -171,6 +169,11 @@ char* responseFormat(int* len, Packet* src)
         SET_AA(flag);
         SET_RCODE(flag, RCODE_NAME_ERROR);
     }
+    else
+    {
+        SET_RCODE(flag, RCODE_NO_ERROR);
+    }
+
     flag = ntohs(flag);
 
     /* --------------------------------- QName Pointer ---------------------------------*/
@@ -205,7 +208,7 @@ char* responseFormat(int* len, Packet* src)
         src->ANS[i].RDLEN = (uint16_t)urlFormat(src->ANS[i].RDATA, &resData, src->ANS[i].TYPE,
             origin_name, names[i], src->ANS[i].ADDITION);
 
-        memcpy(src->ANS[i].RDATA,&resData,src->ANS[i].RDLEN);
+        memcpy(src->ANS[i].RDATA, &resData, src->ANS[i].RDLEN);
         *len += src->ANS[i].RDLEN + 12;
     }
 
@@ -259,7 +262,7 @@ char* responseFormat(int* len, Packet* src)
         memcpy((dataPos + 6), &ttl, sizeof(uint32_t));          // Set TTL          32 Bits
         memcpy((dataPos + 12), pANS->RDATA, pANS->RDLEN);       // Set RDATA
         memcpy((dataPos + 10), &dataLen, sizeof(uint16_t));     // Set RDATA Length 16 Bits
-        
+
         dataPos += pANS->RDLEN + 12;                            // Set dest-pointer offset
     }
     return dest;

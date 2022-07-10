@@ -77,9 +77,9 @@ static size_t TYPE_BUF_SIZE(uint16_t TYPE){
  */
 typedef struct Quest
 {
-    char*       QNAME;
-    uint16_t    QTYPE;
-    uint16_t    QCLASS;
+    char*       QNAME;      //question name
+    uint16_t    QTYPE;      //question type
+    uint16_t    QCLASS;     //question class
 
 }Quest;
 
@@ -90,14 +90,14 @@ typedef struct Quest
  */
 typedef struct Answer
 {
-    uint8_t     QPOS;
-    uint16_t    NAME;
-    uint16_t    TYPE;
-    uint16_t    CLASS;
-    uint16_t    RDLEN;
-    uint32_t    TTL;
-    uint16_t    ADDITION;
-    uint8_t*       RDATA;
+    uint8_t     QPOS;       //pointer to question
+    uint16_t    NAME;       //answer name
+    uint16_t    TYPE;       //answer type
+    uint16_t    CLASS;      //answer class
+    uint16_t    RDLEN;      //answer rdata length
+    uint32_t    TTL;        //answer time-to-live
+    uint16_t    ADDITION;   //answer addition (prefrence in MX)
+    uint8_t*    RDATA;      //answer data pointer
 
 }Answer;
 

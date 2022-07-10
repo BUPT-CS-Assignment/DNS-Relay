@@ -24,7 +24,6 @@ int inetParse(int af, void* url_src, char* dest)
         temp.sin_family = af;                   //set address family
         memcpy(&temp.sin_addr, url_src, sizeof(struct in_addr));   //copy to struct
         ret = WSAAddressToString((LPSOCKADDR)&temp, sizeof(struct sockaddr_in), 0, dest, (LPDWORD)&len);
-        //printf(RED"ipv4 ret: %d code:%d\n"RESET,ret,ERROR_CODE);
 #else
         char* res = inet_ntop(AF_INET, url_src, dest, 16);
         if(res == NULL) ret = SOCKET_ERROR;

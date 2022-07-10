@@ -266,11 +266,12 @@ void cacheCheck(LRU_cache* cache)
         if(entry->type == TYPE_MX)
         {
             printf("  PREF. . . . : %d\n", entry->addition);
-        }
-        unlock(&(cache->lock));
-        printf(BOLDBLUE"  Total Length: %d\n"RESET, cache->length);
-        printf(BOLDGREEN "> check end\n"RESET);
+        } 
+        printf("\n");
     }
+    unlock(&(cache->lock));
+    printf(BOLDBLUE"  Total Length: %d\n"RESET, cache->length);
+    printf(BOLDGREEN "> check end\n"RESET);
 }
 
 
