@@ -117,7 +117,7 @@ void* debugHandle()
         {
             consoleLog(DEBUG_L0, BOLDRED"> command undefined.\n");
         }
-        rewind(stdin);
+        setbuf(stdin, NULL); 
     }
 }
 
