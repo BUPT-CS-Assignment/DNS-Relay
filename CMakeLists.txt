@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1.6)
 project(dnsrelay)
 
-set(CMAKE_C_FLAGS "-std=c11")
+set(CMAKE_C_FLAGS "-std=gnu11")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

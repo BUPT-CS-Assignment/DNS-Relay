@@ -8,4 +8,4 @@ make
 cd ..
 cd bin
 sudo setcap cap_net_bind_service=+ep dnsrelay
-./dnsrelay -d2
+./dnsrelay -d -c64 =10.3.9.44

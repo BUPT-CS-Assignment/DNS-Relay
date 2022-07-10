@@ -12,30 +12,13 @@ int hostInit(hash* map)
     while(fgets(buffer, sizeof buffer, fp) && !feof(fp))
     {
 
-        /* NOTE : In Win , the line feed signal is  '\n' ,
-         *		  However in Linux , it is '\r\n'
-         */
-
-         /* remove blank line */
-#ifdef _WIN32
-        if(buffer[0] == '\n')
-            continue;
-#else
-        if(buffer[0] == '\r')
-            continue;
-#endif
+        if(buffer[0] == '\n')   continue;
 
         char* val = strtok(buffer, " ");
 
         /* split one line string to k-v */
-#ifdef _WIN32
         char* key = strtok(NULL, "\n");
-#else
-        char* key = strtok(NULL, "\r");
-        strtok(NULL, "\n");
-#endif
 
-        // puts(key); puts(val);
         /*现在假定val是某域名对应的ip*/
         DNS_entry* entry = (DNS_entry*)malloc(sizeof(DNS_entry));
         entry->domain_name = malloc(STRMEM(key));

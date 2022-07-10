@@ -16,13 +16,13 @@
 #pragma comment(lib,"Ws2_32.lib")
 
 #define ERROR_CODE GetLastError()
-typedef pthread_t thread_t;
 
 #else
 
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -36,6 +36,8 @@ typedef int SOCKET;
 #define ERROR_CODE errno
 
 #endif
+
+typedef pthread_t thread_t;
 
 /* Debug setting */
 #define DEBUG_L0    0
@@ -66,6 +68,7 @@ void        threadDetach(thread_t);
 int         threadJoin(thread_t thread,void** retVal);
 
 /* Thread Lock */
+
 typedef pthread_rwlock_t rwlock_t;
 
 int lockInit(rwlock_t*);

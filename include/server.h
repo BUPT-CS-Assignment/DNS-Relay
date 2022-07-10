@@ -12,6 +12,7 @@
 extern char         __LOCAL_DNS_ADDR__[64];
 extern Socket       __DNS_SERVER__;      //local dns server
 extern int          __CACHE_LEN__;
+extern int          __CACHE_SCAN_TIME__;
 extern LRU_cache*   __URL_CACHE__;
 extern hash         __HOST_HASHMAP__;
 
@@ -44,8 +45,8 @@ void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
 
 /* Server Base */
 void    start(Socket*);
-void* connectHandle(void* param);
-void* debugHandle();
+void*   connectHandle(void* param);
+void*   debugHandle();
 
 
 /* Address Query */

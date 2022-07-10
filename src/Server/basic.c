@@ -3,7 +3,7 @@
 
 
 /* --------------------------------- Basic Global Variables ---------------------------------*/
-LRU_cache* __URL_CACHE__ = NULL;
+LRU_cache*  __URL_CACHE__ = NULL;
 hash        __HOST_HASHMAP__;
 
 char        __LOCAL_DNS_ADDR__[64] = "114.114.114.114";
@@ -231,60 +231,3 @@ void* cacheScanHandle()
         }
     }
 }
-
-
-
-/**
- * @brief debug operation input while running
- *
- * @return void*
- */
-void* debugHandle()
-{
-    char cmd[255];
-    while(1)
-    {
-        printf(BOLDWHITE"> ");
-        scanf("%[^\n]", &cmd);
-        if(cmd[0] == 'd')
-        {
-            if(cmd[1] == '2') __DEBUG__ = DEBUG_L2;
-            else if(cmd[1] == '1') __DEBUG__ = DEBUG_L1;
-            else __DEBUG__ = DEBUG_L0;
-            consoleLog(DEBUG_L0, BOLDCYAN"> debug level reset: L%d\n", __DEBUG__);
-        }
-        else if(cmd[0] == 't')
-        {
-            consoleLog(DEBUG_L0, BOLDRED"> thread num: %d\n", __THREAD__);
-        }
-        else if(strcmp(cmd, "cache") == 0)
-        {
-            cacheCheck(__URL_CACHE__);
-        }
-        else if(strcmp(cmd, "flush") == 0)
-        {
-            cacheFlush(__URL_CACHE__);
-        }
-        else if(strncmp(cmd, "scan", 4) == 0 && strlen(cmd) >= 6)
-        {
-            int time = atoi((char*)cmd + 5);
-            __CACHE_SCAN_TIME__ = (time > 30 ? time : 30);
-            consoleLog(DEBUG_L0, BOLDRED"> cache scan period: %ds\n", __CACHE_SCAN_TIME__);
-        }
-        else if(strncmp(cmd, "server", 6) == 0)
-        {
-            uint32_t res = inet_addr((char*)cmd + 7);
-            if(res != INADDR_NONE)
-            {
-                __DNS_SERVER__._addr.sin_addr.s_addr = res;
-                consoleLog(DEBUG_L0, BOLDCYAN"> local dns server reset: %s\n", (char*)cmd + 7);
-            }
-        }
-        else
-        {
-            consoleLog(DEBUG_L0, BOLDRED"> command undefined.\n");
-        }
-        rewind(stdin);
-    }
-}
-
