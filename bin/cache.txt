@@ -1,39 +1,75 @@
 *** Cache Records ***
-Total Length: 6
-
-  bing.com
-  --------------------------
-  RR. . . . . : 2620:1ec:c11::200
-  type. . . . : 28
-  ttl . . . . : 3588
-
-  baidu.com
-  --------------------------
-  RR. . . . . : ns4.baidu.com
-  type. . . . : 2
-  ttl . . . . : 68731
-
-  baidu.com
-  --------------------------
-  RR. . . . . : ns3.baidu.com
-  type. . . . : 2
-  ttl . . . . : 68731
-
-  baidu.com
-  --------------------------
-  RR. . . . . : ns7.baidu.com
-  type. . . . : 2
-  ttl . . . . : 68731
-
-  baidu.com
-  --------------------------
-  RR. . . . . : ns2.baidu.com
-  type. . . . : 2
-  ttl . . . . : 68731
+Total Length: 11
 
   baidu.com
   --------------------------
   RR. . . . . : dns.baidu.com
-  type. . . . : 2
-  ttl . . . . : 68731
+  TYPE. . . . : 2
+  TTL . . . . : 1819
+
+  baidu.com
+  --------------------------
+  RR. . . . . : ns4.baidu.com
+  TYPE. . . . : 2
+  TTL . . . . : 1819
+
+  baidu.com
+  --------------------------
+  RR. . . . . : ns2.baidu.com
+  TYPE. . . . : 2
+  TTL . . . . : 1819
+
+  baidu.com
+  --------------------------
+  RR. . . . . : ns3.baidu.com
+  TYPE. . . . : 2
+  TTL . . . . : 1819
+
+  baidu.com
+  --------------------------
+  RR. . . . . : ns7.baidu.com
+  TYPE. . . . : 2
+  TTL . . . . : 1819
+
+  baidu.com
+  --------------------------
+  RR. . . . . : usmx01.baidu.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 20
+
+  baidu.com
+  --------------------------
+  RR. . . . . : mx1.baidu.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 20
+
+  baidu.com
+  --------------------------
+  RR. . . . . : mx.n.shifen.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 15
+
+  baidu.com
+  --------------------------
+  RR. . . . . : mx50.baidu.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 20
+
+  baidu.com
+  --------------------------
+  RR. . . . . : mx.maillb.baidu.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 10
+
+  baidu.com
+  --------------------------
+  RR. . . . . : jpmx.baidu.com
+  TYPE. . . . : 15
+  TTL . . . . : 3424
+  PREF. . . . : 20
 

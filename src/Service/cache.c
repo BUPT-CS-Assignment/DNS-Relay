@@ -224,11 +224,11 @@ int cacheOutput(LRU_cache* cache)
         fprintf(fp,"  %s\n",entry->domain_name);
         fprintf(fp,"  --------------------------\n");
         fprintf(fp,"  RR. . . . . : %s\n", entry->ip);
-        fprintf(fp,"  type. . . . : %d\n", entry->type);
-        fprintf(fp,"  ttl . . . . : %d\n", entry->timestamp - time(NULL));
+        fprintf(fp,"  TYPE. . . . : %d\n", entry->type);
+        fprintf(fp,"  TTL . . . . : %d\n", entry->timestamp - time(NULL));
         if(entry->type == TYPE_MX)
         {
-            fprintf(fp,"  pref. . . . : %d\n", entry->addition);
+            fprintf(fp,"  PREF. . . . : %d\n", entry->addition);
         }
         fprintf(fp,"\n");
     }
@@ -252,11 +252,11 @@ void cacheCheck(LRU_cache* cache)
         printf("  %s\n",entry->domain_name);
         printf("  ---------------------------\n");
         printf("  RR. . . . . : %s\n", entry->ip);
-        printf("  type. . . . : %d\n", entry->type);
-        printf("  ttl . . . . : %d\n", entry->timestamp - time(NULL));
+        printf("  TYPE. . . . : %d\n", entry->type);
+        printf("  TTL . . . . : %d\n", entry->timestamp - time(NULL));
         if(entry->type == TYPE_MX)
         {
-            printf("  pref. . . . : %d\n", entry->addition);
+            printf("  PREF. . . . : %d\n", entry->addition);
         }
         printf("\n");
     }
