@@ -1,13 +1,12 @@
 #include "utils/hash.h"
 #include "cache.h"
-#include <stdlib.h>
+#include "console.h"
 
 /* -----------------GENERIC Hash Node Implement----------------- */
 /**
  * @brief use void* to generalize
  */
-static hash_node* make_node(const void* _key, size_t _k_len, void* _value,
-    size_t _v_len)
+static hash_node* make_node(const void* _key, size_t _k_len, void* _value, size_t _v_len)
 {
     hash_node* node = (hash_node*)calloc(1, sizeof(hash_node));
 
@@ -33,21 +32,24 @@ static void modify_node(hash_node* node, void* _value, size_t _v_len)
     memcpy(node->value, _value, _v_len);
 }
 
-static void free_node(hash_node *node) {
-  free(node->key);
-  mylist_head **head = ((mylist_head**)node->value);
-  if (head != NULL) {
-    mylist_head* p;
-    mylist_for_each(p, *head) {
-      DNS_entry *temp = mylist_entry(p, DNS_entry, node);
-      free(temp->domain_name);
-      free(temp->ip);
-      free(temp);
+static void free_node(hash_node* node)
+{
+    free(node->key);
+    mylist_head** head = ((mylist_head**)node->value);
+    if(head != NULL)
+    {
+        mylist_head* p;
+        mylist_for_each(p, *head)
+        {
+            DNS_entry* temp = mylist_entry(p, DNS_entry, node);
+            free(temp->domain_name);
+            free(temp->ip);
+            free(temp);
+        }
+        free(*head);
     }
-    free(*head);
-  }
-  free(node->value);
-  free(node);
+    free(node->value);
+    free(node);
 }
 
 static void cat_node(hash_node* prev, hash_node* nxtv)
@@ -154,8 +156,7 @@ static int remove_bucket(hash_bucket* bk, const void* key, size_t k_len)
     return FAILURE;
 }
 
-static int query_bucket(hash_bucket* bk, hash_node* ret, const void* key,
-    size_t k_len)
+static int query_bucket(hash_bucket* bk, hash_node* ret, const void* key, size_t k_len)
 {
     pthread_rwlock_rdlock(&bk->rwlock);
 
@@ -277,14 +278,17 @@ int modify_hash(struct string_hash* map, const char* key, void* value,
     return modify_bucket(&map->bks[bk_id], key, k_len, value, v_len);
 }
 
-void count_hash(struct string_hash *map) {
-  size_t tmp = 0;
-  size_t sum = 0;
+void count_hash(struct string_hash* map)
+{
+    size_t tmp = 0;
+    size_t sum = 0;
 
-  for (int i = 0; i < BUCKET_SIZE; i++)
-    tmp = tmp > (map->bks[i].bk_s) ? tmp : map->bks[i].bk_s,
-    sum += map->bks[i].bk_s;
-  printf("Max Bucket Nodes = %lu\n"
-         "Average deepth   = %lf\n",
-         tmp, (double)sum / BUCKET_SIZE);
+    for(int i = 0; i < BUCKET_SIZE; i++)
+    {
+        tmp = tmp > (map->bks[i].bk_s) ? tmp : map->bks[i].bk_s,
+            sum += map->bks[i].bk_s;
+    }
+
+    printf(BOLDWHITE"> host file loaded. max bucket nodes: %lu, average deepth: %lf\n",
+        tmp, (double)sum / BUCKET_SIZE);
 }

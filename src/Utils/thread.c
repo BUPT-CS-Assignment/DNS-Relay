@@ -32,7 +32,6 @@ thread_t threadCreate(void* (*thread_handler)(void*), void* args)
     else
     {
         ++ __THREAD__;
-        printf("> thread num: %d\n", __THREAD__);
     }
 
     return thread;
@@ -60,7 +59,7 @@ void threadDetach(thread_t thread)
 void threadExit(size_t time_ms)
 {
     -- __THREAD__;
-    printf("thread num: %d\n", __THREAD__);
+    
 #ifdef _WIN32
         Sleep(time_ms);
 #else

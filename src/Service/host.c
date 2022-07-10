@@ -1,14 +1,12 @@
-#include "file.h"
-
-//extern hash *map; //默认已有全局变量hash *map
+#include "host.h"
 
 /**
  * @description: 初始化所有表里的内容进入内存
  * @return {*}
  */
-int file_init(hash* map)
+int hostInit(hash* map)
 {
-    FILE* fp = fopen("host.txt", "r");
+    FILE* fp = fopen(__HOST_DEST__, "r");
     if(fp == NULL)  return -1;
     char buffer[512];
     while(fgets(buffer, sizeof buffer, fp) && !feof(fp))
@@ -51,16 +49,6 @@ int file_init(hash* map)
 
         mylist_head* head;
 
-        // if (insert_hash(map, key, val, STRMEM(val)) == FAILURE) {
-        //   // memset(buffer , 0 , sizeof buffer);
-        //   char concat[512];
-        //   memset(concat, 0, sizeof concat);
-
-        //   query_hash(map, key, concat, sizeof concat);
-
-        //   // strcat(buffer , val);
-        //   printf("Duplicated %s : %s + %s\n", key, concat, val);
-        // }
         int ret = query_hash(map, entry->domain_name, &head, sizeof(mylist_head*));
         if(ret == SUCCUSS)
         {
@@ -82,13 +70,15 @@ int file_init(hash* map)
     return 0;
 }
 
+
+
 /**
  * @description: 提供给上层的查找函数
  * @param {DNS_entry} *entry 要查找的条文类型
  * @param {DNS_entry} **result 查找结果数组的地址，使用前应该只需要声明，查到的结果将会全部保存在此处，是临时动态分配的指针，需要随用随free（不需要深拷贝）
  * @return count 返回查找到条文的数目
  */
-int file_find(DNS_entry* entry, DNS_entry** result, hash* map)
+int hostQuery(DNS_entry* entry, DNS_entry** result, hash* map, int* flag)
 {
     mylist_head* res;
     int ret = query_hash(map, entry->domain_name, &res, sizeof(mylist_head*));
@@ -102,29 +92,36 @@ int file_find(DNS_entry* entry, DNS_entry** result, hash* map)
         int count = 0;
         mylist_for_each(p, res)
         {
+            if(flag == 0)   return 0;
             count++;
         }
-        *result = malloc(sizeof(DNS_entry) * (count + 1)); //+1只是防止一些奇怪情况
-        memset(*result,0,sizeof(DNS_entry) * (count + 1));
-        int i = 0;
+        *result = malloc(sizeof(DNS_entry) * count);
+        memset(*result, 0, sizeof(DNS_entry) * count);
+
+        int num = 0;
         mylist_for_each(p, res)
         {
+            if(flag == 0)   return 0;
+
             DNS_entry* temp = mylist_entry(p, DNS_entry, node);
-            if(strcmp(temp->ip,"0.0.0.0") == 0){
+            if(strcmp(temp->ip, "0.0.0.0") == 0)
+            {
                 return -1;
             }
-            if(temp->type == entry->type){
-                memcpy(&(*result)[i], temp, sizeof(DNS_entry));
-                (*result)[i].timestamp = time(NULL) + 0x80;
-                i++;
+            if(temp->type == entry->type)
+            {
+                memcpy(&(*result)[num], temp, sizeof(DNS_entry));
+                (*result)[num].timestamp = time(NULL) + 0x80;
+                num++;
             }
         }
-        return i;
+        return num;
     }
     return 0;
 }
 
-int file_free(hash* map)
+
+int hostFree(hash* map)
 {
     free_hash(map); // free_node() modified
 }

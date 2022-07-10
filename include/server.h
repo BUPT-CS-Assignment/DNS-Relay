@@ -4,19 +4,18 @@
 #include "main.h"
 #include "protocol.h"
 #include "cache.h"
-#include "file.h"
+#include "host.h"
+#include "utils/map.h"
 
 /*----------------------------------- Definitions -----------------------------------*/
 
-extern char _local_dns_addr[64];
+extern char         __LOCAL_DNS_ADDR__[64];
+extern Socket       __DNS_SERVER__;      //local dns server
+extern int          __CACHE_LEN__;
+extern LRU_cache*   __URL_CACHE__;
+extern hash         __HOST_HASHMAP__;
 
 /*-------------------------------- Global Variables ---------------------------------*/
-
-
-extern Socket _dns_server;      //local dns server
-extern int LRU_CACHE_LENGTH;
-extern LRU_cache* _url_cache;
-extern hash _hash_map;
 
 /* MAX BUFFER SIZE */
 #define BUFFER_SIZE             1024
@@ -45,25 +44,25 @@ void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
 
 /* Server Base */
 void    start(Socket*);
-void*   connectHandle(void* param);
-void*   debugHandle();
+void* connectHandle(void* param);
+void* debugHandle();
 
 
 /* Address Query */
 int     urlStore(Packet*);
 int     urlQuery(Packet*);
-int     qnameSearch(char *qname,uint16_t qtype,DNS_entry** result,int* resource);
+int     qnameSearch(char* qname, uint16_t qtype, DNS_entry** result, int* resource);
 
 
 /* Packet Handle */
 Packet* packetParse(uint8_t* buf, int len);
-char*   responseFormat(int* len, Packet*);
+char* responseFormat(int* len, Packet*);
 void    packetFree(Packet*);
 
 
 /* Url Resolve */
 int     urlFormat(char* url, void* dest, int mode, char* name, uint16_t pointer, uint16_t addition);
-int     urlParse(void* src, char* dest, void* addtion,int mode, uint16_t len, uint8_t* buf);
+int     urlParse(void* src, char* dest, void* addtion, int mode, uint16_t len, uint8_t* buf);
 
 
 /* Packet Check */

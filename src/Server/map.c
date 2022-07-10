@@ -11,9 +11,9 @@ void MapInit()
 {
     for(int i = 0; i < MAX_MAP_SIZE; i++)
     {
-        _Map[i] = NULL;
+        __ID_MAP__[i] = NULL;
     }
-    _map_allocator = 0;
+    __MAP_ALLOC__ = 0;
     lockInit(&_map_lock);
 }
 
@@ -28,6 +28,7 @@ void MapInit()
  * 
  */
 
+
 /**
  * @brief restore & convert origin id
  *
@@ -41,25 +42,25 @@ uint16_t addToMap(uint16_t origin, struct sockaddr_in* addr)
 
     /* thread-save counter */
     writeLock(&_map_lock);
-    _map_allocator = (_map_allocator + 1) % UINT16_MAX;   //avoid out of bounds
-    uint16_t serial = _map_allocator;
+    __MAP_ALLOC__ = (__MAP_ALLOC__ + 1) % UINT16_MAX;   //avoid out of bounds
+    uint16_t serial = __MAP_ALLOC__;
     unlock(&_map_lock);
 
     uint16_t converted = serial % MAX_MAP_SIZE, current = serial / MAX_MAP_SIZE;
 
     /* check time-out */
-    if(_Map[converted] != NULL && _Map[converted]->_time_out > time(NULL))
+    if(__ID_MAP__[converted] != NULL && __ID_MAP__[converted]->_time_out > time(NULL))
     {
         return UINT16_MAX;
     }
 
     /* fill new info */
-    MapNode* temp = _Map[converted];
-    _Map[converted] = malloc(sizeof(MapNode));              //allocate new memory
-    _Map[converted]->_time_out = time(NULL) + CONVERT_TTL;  //set new time_stamp
-    _Map[converted]->_origin = origin;                      //record origin id
-    _Map[converted]->_last = current;                       //record current change
-    memcpy(&_Map[converted]->_from, addr, sizeof(struct sockaddr_in));  //record origin address
+    MapNode* temp = __ID_MAP__[converted];
+    __ID_MAP__[converted] = malloc(sizeof(MapNode));              //allocate new memory
+    __ID_MAP__[converted]->_time_out = time(NULL) + CONVERT_TTL;  //set new time_stamp
+    __ID_MAP__[converted]->_origin = origin;                      //record origin id
+    __ID_MAP__[converted]->_last = current;                       //record current change
+    memcpy(&__ID_MAP__[converted]->_from, addr, sizeof(struct sockaddr_in));  //record origin address
     free(temp);                                             //free old memory
 
     return serial;
@@ -81,19 +82,19 @@ int queryMap(uint16_t serial, uint16_t* origin, struct sockaddr_in* from)
     uint16_t converted = serial % MAX_MAP_SIZE, current = serial / MAX_MAP_SIZE;
 
     /* check if is current change */
-    if(_Map[converted] == NULL || _Map[converted]->_last != current)
+    if(__ID_MAP__[converted] == NULL || __ID_MAP__[converted]->_last != current)
     {
         return -1;
         
     }
 
     /* copy infomation */
-    memcpy(origin, &_Map[converted]->_origin, sizeof(uint16_t));
-    memcpy(from, &_Map[converted]->_from, sizeof(struct sockaddr_in));
+    memcpy(origin, &__ID_MAP__[converted]->_origin, sizeof(uint16_t));
+    memcpy(from, &__ID_MAP__[converted]->_from, sizeof(struct sockaddr_in));
 
     /* clear TTL */
-    MapNode* temp = _Map[converted];
-    _Map[converted] = NULL;
+    MapNode* temp = __ID_MAP__[converted];
+    __ID_MAP__[converted] = NULL;
     free(temp);
 
     return 0;

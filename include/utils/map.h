@@ -14,8 +14,8 @@ typedef struct MapNode{
 
 }MapNode;
 
-static MapNode* _Map[MAX_MAP_SIZE];
-static uint16_t _map_allocator;
+static MapNode* __ID_MAP__[MAX_MAP_SIZE];
+static uint16_t __MAP_ALLOC__;
 
 void        mapInit();
 uint16_t    addToMap(uint16_t origin,struct sockaddr_in* addr);

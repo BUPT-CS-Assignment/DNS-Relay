@@ -1,28 +1,51 @@
 #include "server.h"
 #include "console.h"
 
+/* --------------------------------- Basic Definition ---------------------------------*/
+/**
+ * @brief host-query thread args
+ * 
+ */
+typedef struct hq_args
+{
+    DNS_entry* entry;
+    DNS_entry** res_dest;
+    int* res_num;
+    int* flag;
 
+}hq_args;
+
+void* host_query_handle(void* args);    //host-query thread handler
+
+
+/* --------------------------------- Main Function ---------------------------------*/
+
+/**
+ * @brief store record into cache
+ * 
+ * @param src packet pointer
+ * @return int current cache length
+ */
 int urlStore(Packet* src)
 {
     consoleLog(DEBUG_L1, BOLDMAGENTA"> store into cache\n");
-    //char name[255];
     for(int i = 0; i < src->ANCOUNT; i++)
     {
-        if(src->ANS[i].TYPE != src->QUESTS[0].QTYPE)
+        if(src->ANS[i].TYPE != src->QUESTS[0].QTYPE)    //not query type, cancel store
         {
             continue;
         }
+
         DNS_entry* entry;
         Answer* pANS = &src->ANS[i];
 
-        //urlParse(&pANS->NAME,name,NULL,TYPE_CNAME,2,src->req_buf);
-        //DNS_entry_set(&entry, name, pANS->RDATA, pANS->TTL, pANS->TYPE, pANS->ADDITION);
-
+        /* fill dns_entry && insert into cache */
         DNS_entry_set(&entry, src->QUESTS[0].QNAME, pANS->RDATA, pANS->TTL, pANS->TYPE, pANS->ADDITION);
-        LRU_entry_add(_url_cache, entry);
+        cacheInsert(__URL_CACHE__, entry);
     }
-    return _url_cache->length;
+    return __URL_CACHE__->length;
 }
+
 
 
 /**
@@ -43,15 +66,19 @@ int urlQuery(Packet* src)
         DNS_entry* result = NULL;
         int resource;
         int found = qnameSearch(src->QUESTS[i].QNAME, src->QUESTS[i].QTYPE, &result, &resource);
-        /* Mismatch */
-        if(found == -1){
+
+        if(found == -1)
+        {
+            /* qname in black list */
             src->ANCOUNT = 0;
             free(result);
             return -1;
         }
         if(found == 0)
         {
+            /* Mismatch */
             src->ANCOUNT = 0;
+            free(result);
             return 0;
         }
 
@@ -69,19 +96,15 @@ int urlQuery(Packet* src)
             src->ANS[pos + j].TTL = result[j].timestamp - time(NULL);
             src->ANS[pos + j].ADDITION = result[j].addition;
             src->ANS[pos + j].RDATA = (char*)malloc(TYPE_BUF_SIZE(src->QUESTS[i].QTYPE));
-            strcpy(src->ANS[pos + j].RDATA, result[j].ip);
-            if(resource == RESOURCE_CACHE)
-            {
-                DNS_entry_free(&result[j]);
-            }
+            strcpy(src->ANS[pos + j].RDATA, result[j].ip);      //copy result data
+
+            if(resource == RESOURCE_CACHE)  DNS_entry_free(&result[j]);     //results from host are not deep-copied
         }
         free(result);
     }
     return src->ANCOUNT;
 }
 
-
-void* file_find_handler(void* args);
 
 
 /**
@@ -98,56 +121,76 @@ int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result, int* resource)
 {
     if(qname == NULL) return 0;
 
-    DNS_entry* _entry;
-    DNS_entry_set(&_entry, qname, NULL, 0, qtype, 0);
+    /* construct dns_entry for query */
+    DNS_entry* entry_cache, * entry_host;
+    DNS_entry_set(&entry_cache, qname, NULL, 0, qtype, 0);
+    DNS_entry_set(&entry_host, qname, NULL, 0, qtype, 0);
 
-    DNS_entry* res_1 = NULL, * res_2 = NULL;
-    int* flag = (int*)malloc(sizeof(int));
-    int ret_2 = 0;
-    *flag = 0;
+    DNS_entry* res_cache = NULL, * res_host = NULL;     //query result dest from cache/host
+    int ret_cache = 0, ret_host = 0;                    //query result number from cache/host
+    int* host_flag = (int*)malloc(sizeof(int));         //query stop flag for host
+    *host_flag = 1;
+    
+    /* fill hash-query thread args */
+    hq_args* hq_arg = (hq_args*)malloc(sizeof(hq_args));
+    hq_arg->entry = entry_host;
+    hq_arg->res_dest = &res_host;
+    hq_arg->res_num = &ret_host;
+    hq_arg->flag = host_flag;
 
-    int ret = LRU_cache_find(_url_cache, _entry, &res_1);
+    /* start thread for query host && query cache */
+    thread_t thread_host = threadCreate((void*)host_query_handle, hq_arg);
+    ret_cache = cacheQuery(__URL_CACHE__, entry_cache, &res_cache);
 
-    void* args[] = {&_hash_map,_entry,&res_2,&ret_2,flag};
-    thread_t t_num = threadCreate((void*)file_find_handler, args);
-    void* local_found;
-    if(ret == 0)
+    int ret;
+    if(ret_cache == 0)
     {
-        threadJoin(t_num, NULL);
-        consoleLog(DEBUG_L0, BOLDGREEN"> query from host return %d\n", ret_2);
-        if(ret_2 != 0)
-        {
-            *result = res_2;
-        }
-        ret = ret_2;
+        /* not in cache, wait for query-host thread */
+        threadJoin(thread_host, NULL);
+        consoleLog(DEBUG_L0, BOLDGREEN"> query from host return %d\n", ret_host);
+        if(ret_host != 0)   *result = res_host;     //query success from host (res number > 0)
+        ret = ret_host;
         *resource = RESOURCE_HOST;
     }
     else
     {
-        threadDetach(t_num);
-        consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret);
-        *result = res_1;
+        /* in cache, stop host-query thread */
+        threadDetach(thread_host);
+        *host_flag = 0;
+        consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret_cache);
+        *result = res_cache;                        //query success from cache (res number > 0)
+        ret = ret_cache;
         *resource = RESOURCE_CACHE;
 
     }
 
-    DNS_entry_free(_entry);
-    free(_entry);
+    /* free memory */
+    DNS_entry_free(entry_cache);
+    free(entry_cache);
     return ret;
 }
 
 
-void* file_find_handler(void* args)
+
+/* --------------------------------- Thread Function ---------------------------------*/
+
+/**
+ * @brief host query thread handler
+ * 
+ * @param args thread args hq_args
+ * @return void* 
+ */
+void* host_query_handle(void* args)
 {
-    hash* map = (hash*)((void**)args)[0];
-    DNS_entry* temp = (DNS_entry*)((void**)args)[1];
-    DNS_entry** result = (DNS_entry**)((void**)args)[2];
-    int* ret = (int*)((void**)args)[3];
-    int* flag = (int*)((void**)args)[4];
-    DNS_entry* entry;
-    DNS_entry_set(&entry, temp->domain_name, temp->ip, 0, temp->type, temp->addition);
-    *ret = file_find(entry, result, map);
-    DNS_entry_free(entry);
-    free(entry);
+    hq_args* arg = (hq_args*)args;
+
+    /* queyr from host */
+    *(*arg).res_num = hostQuery((*arg).entry, (*arg).res_dest, &__HOST_HASHMAP__, (*arg).flag);
+
+    /* free memory */
+    DNS_entry_free((*arg).entry);
+    free((*arg).entry);
+    free(arg);
+
     threadExit(1);
 }

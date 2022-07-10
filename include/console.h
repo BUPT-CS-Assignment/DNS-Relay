@@ -19,8 +19,10 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
-extern int __DEBUG__;
-extern int LRU_CACHE_LENGTH;
+extern int  __DEBUG__;
+extern int  __CACHE_LEN__;
+extern char __HOST_DEST__ [255];
+
 void consoleParse(int argc, char *argv[]);
 void consoleLog(int debug_level, const char * fmt,...);
 

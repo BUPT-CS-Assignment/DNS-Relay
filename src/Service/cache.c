@@ -1,11 +1,6 @@
 #include "console.h"
-#include "file.h"
-#include "utils/hash.h"
-#include "utils/list.h"
-#include <cache.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include "host.h"
+#include "cache.h"
 
 // extern hash *map;
 
@@ -21,7 +16,7 @@ typedef struct cache_args
     int count;
 } cache_args;
 
-int LRU_CACHE_LENGTH = 64;
+int __CACHE_LEN__ = 64;
 
 /* --------------------------------- Entry Setting ---------------------------------*/
 
@@ -67,6 +62,8 @@ int DNS_entry_set(DNS_entry** ptr, char* name, char* ip, uint32_t ttl,
     return 0;
 }
 
+
+
 /**
  * @brief free dns_entry structure
  *
@@ -82,8 +79,8 @@ void DNS_entry_free(DNS_entry* entry)
     entry->ip = NULL;
 }
 
-/* --------------------------------- Inner LRU_cache Function ---------------------------------*/
 
+/* --------------------------------- Inner LRU_cache Function ---------------------------------*/
  /**
   * @description: 向条文链表中加入新一条，写入指定的内存位置中，为内部使用的函数
   * @param {LRU_cache} *cache
@@ -118,6 +115,8 @@ int __LRU_list_add(LRU_cache* cache, DNS_entry* entry, DNS_entry* location)
     return LRU_OP_SUCCESS;
 }
 
+
+
 /**
  * @description: 删除链表中的指定一个节点，为内部使用的函数
  * @param {LRU_cache} *
@@ -133,6 +132,8 @@ int __LRU_list_del(LRU_cache* cache, DNS_entry* entry)
     mylist_del(&entry->node);
     return LRU_OP_SUCCESS;
 }
+
+
 
 /**
  * @brief multi-thread LRU_cache rotate
@@ -160,6 +161,8 @@ void* __LRU_cache_rotate(void* param)
     threadExit(0);
 }
 
+
+
 /* --------------------------------- Usage Function ---------------------------------*/
 
  /**
@@ -167,12 +170,12 @@ void* __LRU_cache_rotate(void* param)
   * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
   * @return {*}
   */
-int LRU_cache_init(LRU_cache** cptr)
+int cacheInit(LRU_cache** cptr)
 {
     *cptr = (LRU_cache*)malloc(sizeof(LRU_cache));
-    (*cptr)->list = (DNS_entry*)malloc(sizeof(DNS_entry) * LRU_CACHE_LENGTH);
-    (*cptr)->set = malloc(sizeof(uint8_t) * LRU_CACHE_LENGTH);
-    memset((*cptr)->set, 0, sizeof(uint8_t) * LRU_CACHE_LENGTH);
+    (*cptr)->list = (DNS_entry*)malloc(sizeof(DNS_entry) * __CACHE_LEN__);
+    (*cptr)->set = malloc(sizeof(uint8_t) * __CACHE_LEN__);
+    memset((*cptr)->set, 0, sizeof(uint8_t) * __CACHE_LEN__);
     INIT_MY_LIST_HEAD(&(*cptr)->head);
 
     (*cptr)->length = 0;
@@ -180,12 +183,14 @@ int LRU_cache_init(LRU_cache** cptr)
     return LRU_OP_SUCCESS;
 }
 
+
+
 /**
  * @description: 析构缓存单元，释放动态分配好的内存
  * @param {LRU_cache} *cache
  * @return {*}
  */
-int LRU_cache_free(LRU_cache* cache)
+int cacheFree(LRU_cache* cache)
 {
     writeLock(&cache->lock);
     for(int i = 0; i < cache->length; i++)
@@ -197,7 +202,9 @@ int LRU_cache_free(LRU_cache* cache)
     return LRU_OP_SUCCESS;
 }
 
-void LRU_cache_check(LRU_cache* cache)
+
+
+void cacheCheck(LRU_cache* cache)
 {
     mylist_head* p;
     printf(BOLDRED "> cache check\n" RESET);
@@ -219,6 +226,8 @@ void LRU_cache_check(LRU_cache* cache)
     printf(BOLDRED "> check end\n");
 }
 
+
+
 /**
  * @description: 查找链表中所有符合特定域名与特定类型的条文
  * @param {LRU_cache} *
@@ -227,12 +236,12 @@ void LRU_cache_check(LRU_cache* cache)
  * 查询到的所有条文，为动态分配的指针，对应的字符串未被深拷贝过，释放靠上层
  * @return {*} 返回值为查询到符合的条文数量
  */
-int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
+int cacheQuery(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
 {
     int count = 0;
-    *result = (DNS_entry*)malloc(sizeof(DNS_entry) * LRU_CACHE_LENGTH);
+    *result = (DNS_entry*)malloc(sizeof(DNS_entry) * __CACHE_LEN__);
     DNS_entry** temp =
-        (DNS_entry**)malloc(sizeof(DNS_entry*) * LRU_CACHE_LENGTH);
+        (DNS_entry**)malloc(sizeof(DNS_entry*) * __CACHE_LEN__);
     mylist_head* p;
     readLock(&(cache->lock));
     mylist_for_each(p, &cache->head)
@@ -255,17 +264,22 @@ int LRU_cache_find(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
         }
     }
     unlock(&(cache->lock));
+
+    /* fill cache-rotate thread args */
     cache_args* cargs = (cache_args*)malloc(sizeof(cache_args));
     cargs->cache = cache;
     cargs->count = count;
     cargs->temp_array = temp;
-    thread_t t_fd =
-        threadCreate(__LRU_cache_rotate, cargs); // new thread to rotate
-    threadDetach(t_fd);
+
+    /* start && detach thread */
+    threadDetach(threadCreate(__LRU_cache_rotate, cargs));
+
     return count;
 }
 
-int LRU_cache_confirm_overtime(LRU_cache* cache)
+
+
+int cacheScan(LRU_cache* cache)
 {
     writeLock(&(cache->lock));
     int flag = 0;
@@ -275,13 +289,11 @@ int LRU_cache_confirm_overtime(LRU_cache* cache)
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
         if(entry->timestamp < time(NULL))
         {
-            consoleLog(DEBUG_L1, BOLDRED "> cache record overdue\n");
-            // unlock(&(cache->lock));
+            consoleLog(DEBUG_L1, BOLDRED "> cache record overdue.\n");
             p = p->prev;
             __LRU_list_del(cache, entry);
             int offset = entry - cache->list;
             cache->set[offset] = 0;
-            // readLock(&(cache->lock));
             cache->length--;
             flag = 1;
         }
@@ -290,6 +302,8 @@ int LRU_cache_confirm_overtime(LRU_cache* cache)
     return flag;
 }
 
+
+
 /**
  * @description: 将互联网上查到的新报文加入缓存系统中，为外部调用的接口
  * @param {LRU_cache} *cache
@@ -297,36 +311,18 @@ int LRU_cache_confirm_overtime(LRU_cache* cache)
  * 互联网上查询到的内容组织成的新报文，事先应封装好对应内容
  * @return {*}
  */
-int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
+int cacheInsert(LRU_cache* cache, DNS_entry* entry)
 {
     writeLock(&(cache->lock));
-    // if (cache->length <
-    //     LRU_CACHE_LENGTH) {
-    //     //如果缓存空间仍未满，直接在内存空闲位置加入新条文，新条文会位于链表头
-    //   __LRU_list_add(cache, entry, &cache->list[cache->length]);
-
-    //   cache->length++;
-    // } else {
-    // //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
-    //   DNS_entry *tail = mylist_entry(cache->head.prev, DNS_entry, node);
-    //   if (mylist_is_last(&tail->node, &cache->head)) {
-    //     __LRU_list_del(cache, tail);
-    //     __LRU_list_add(cache, entry, tail);
-    //   }
-    // }
-    if(cache->length < LRU_CACHE_LENGTH)
+    if(cache->length < __CACHE_LEN__)
     {
         int i;
-        for(i = 0; i < LRU_CACHE_LENGTH; i++)
+        for(i = 0; i < __CACHE_LEN__; i++)
         {
-            if(cache->set[i] == 0)
-            {
-                break;
-            }
+            if(cache->set[i] == 0)  break;
         }
         __LRU_list_add(cache, entry, &cache->list[i]);
         mylist_head* head;
-        // insert_one(map, &head, entry);
         cache->set[i] = 1;
         cache->length++;
     }
@@ -345,8 +341,11 @@ int LRU_entry_add(LRU_cache* cache, DNS_entry* entry)
     return LRU_OP_SUCCESS;
 }
 
-int LRU_cache_clean(LRU_cache* cache)
+
+
+int cacheFlush(LRU_cache* cache)
 {
+    writeLock(&(cache->lock));
     for(int i = 0; i < cache->length; i++)
     {
         free(cache->list[i].domain_name);
@@ -355,50 +354,11 @@ int LRU_cache_clean(LRU_cache* cache)
         cache->list[i].ip = NULL;
         mylist_del(&cache->list[i].node);
     }
-    memset(cache->set, 0, sizeof(uint8_t) * LRU_CACHE_LENGTH);
+    memset(cache->set, 0, sizeof(uint8_t) * __CACHE_LEN__);
     INIT_MY_LIST_HEAD(&cache->head);
     cache->length = 0;
-    return 0;
-}
-
-int LRU_entry_add_with_hash(LRU_cache* cache, DNS_entry* entry, hash* map)
-{
-    writeLock(&(cache->lock));
-    if(cache->length < LRU_CACHE_LENGTH)
-    {
-        int i;
-        for(i = 0; i < LRU_CACHE_LENGTH; i++)
-        {
-            if(cache->set[i] == 0)
-            {
-                break;
-            }
-        }
-        __LRU_list_add(cache, entry, &cache->list[i]);
-        mylist_head* head;
-        Dptr_in_map* dp = malloc(sizeof(Dptr_in_map));
-        dp->Dptr = entry;
-        insert_one(map, &head, dp);
-        cache->set[i] = 1;
-        cache->length++;
-    }
-    else
-    {
-        //如果缓存空间位置已满，将链表最后的一条文的内存位置腾出给新条文，新条文会位于链表头
-        DNS_entry* tail = mylist_entry(cache->head.prev, DNS_entry, node);
-        if(mylist_is_last(&tail->node, &cache->head))
-        {
-            Dptr_in_map* dp = malloc(sizeof(Dptr_in_map));
-            dp->Dptr = tail;
-            delete_one(map, dp);
-            __LRU_list_del(cache, tail);
-            __LRU_list_add(cache, entry, tail);
-            dp->Dptr = tail;
-            mylist_head* head;
-            insert_one(map, &head, dp);
-        }
-    }
     unlock(&(cache->lock));
+    consoleLog(DEBUG_L1, BOLDGREEN "> cache flush ok.\n");
+    return 0;
 
-    return LRU_OP_SUCCESS;
 }

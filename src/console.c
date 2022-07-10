@@ -26,12 +26,16 @@ void consoleParse(int argc, char* argv[])
             }
             else if(argv[i][1] == 'c' && len >= 3)  //cache size
             {
-                LRU_CACHE_LENGTH = atoi(argv[i] + 2);
+                __CACHE_LEN__ = atoi(argv[i] + 2);
             }
         }
         else if(argv[i][0] == '=' && len >= 2)
         {
-            strcpy(_local_dns_addr, argv[i] + 1);   //local dns server address
+            strcpy(__LOCAL_DNS_ADDR__, argv[i] + 1);   //local dns server address
+        }
+        else if(argv[i][0] == '<' && len >= 2)
+        {
+            strcpy(__HOST_DEST__, argv[i] + 1);
         }
     }
 
