@@ -1,8 +1,6 @@
+#include "cache.h"
 #include "console.h"
 #include "host.h"
-#include "cache.h"
-
-// extern hash *map;
 
 /* --------------------------------- Basic Definition ---------------------------------*/
 /**
@@ -18,8 +16,9 @@ typedef struct cache_args
 
 int __CACHE_LEN__ = 64;
 
-/* --------------------------------- Entry Setting ---------------------------------*/
 
+
+/* --------------------------------- Entry Setting ---------------------------------*/
 /**
  * @brief fill dns_entry structure
  *
@@ -78,6 +77,7 @@ void DNS_entry_free(DNS_entry* entry)
     free(entry->ip);
     entry->ip = NULL;
 }
+
 
 
 /* --------------------------------- Inner LRU_cache Function ---------------------------------*/
@@ -164,12 +164,11 @@ void* __LRU_cache_rotate(void* param)
 
 
 /* --------------------------------- Usage Function ---------------------------------*/
-
- /**
-  * @description: 初始化缓存单元，动态分配内存
-  * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
-  * @return {*}
-  */
+/**
+ * @description: 初始化缓存单元，动态分配内存
+ * @param {LRU_cache} *cache 提前声明好，要被初始化的缓存变量
+ * @return {*}
+ */
 int cacheInit(LRU_cache** cptr)
 {
     *cptr = (LRU_cache*)malloc(sizeof(LRU_cache));
@@ -182,8 +181,6 @@ int cacheInit(LRU_cache** cptr)
     lockInit(&(*cptr)->lock);
     return LRU_OP_SUCCESS;
 }
-
-
 
 /**
  * @description: 析构缓存单元，释放动态分配好的内存
@@ -204,35 +201,41 @@ int cacheFree(LRU_cache* cache)
 
 
 
+/**
+ * @brief output cache content to file
+ *
+ * @param cache LRU_cache pointer
+ * @return int output result (0:success)
+ */
 int cacheOutput(LRU_cache* cache)
 {
-    printf(BOLDMAGENTA"> cache records output.\n");
+    printf(BOLDMAGENTA "> cache records output.\n");
     FILE* fp = fopen("cache.txt", "w");
     if(fp == NULL)
     {
-        printf(BOLDRED"> file create failed.\n");
+        printf(BOLDRED "> file create failed.\n");
         return -1;
     }
     mylist_head* p;
-    fprintf(fp,"*** Cache Records ***\n");
+    fprintf(fp, "*** Cache Records ***\n");
 
     readLock(&(cache->lock));
-    fprintf(fp,"Total Length: %d\n\n", cache->length);
+    fprintf(fp, "Total Length: %d\n\n", cache->length);
     mylist_for_each(p, &cache->head)
     {
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
-        fprintf(fp,"  %s\n",entry->domain_name);
-        fprintf(fp,"  --------------------------\n");
-        fprintf(fp,"  RR. . . . . : %s\n", entry->ip);
-        fprintf(fp,"  TYPE. . . . : %d\n", entry->type);
-        fprintf(fp,"  TTL . . . . : %d\n", entry->timestamp - time(NULL));
+        fprintf(fp, "  %s\n", entry->domain_name);
+        fprintf(fp, "  --------------------------\n");
+        fprintf(fp, "  RR. . . . . : %s\n", entry->ip);
+        fprintf(fp, "  TYPE. . . . : %d\n", entry->type);
+        fprintf(fp, "  TTL . . . . : %d\n", entry->timestamp - time(NULL));
         if(entry->type == TYPE_MX)
         {
-            fprintf(fp,"  PREF. . . . : %d\n", entry->addition);
+            fprintf(fp, "  PREF. . . . : %d\n", entry->addition);
         }
-        fprintf(fp,"\n");
+        fprintf(fp, "\n");
     }
-    
+
     unlock(&(cache->lock));
     fclose(fp);
     printf(BOLDGREEN "> output ok. check 'cache.txt'.\n");
@@ -240,6 +243,12 @@ int cacheOutput(LRU_cache* cache)
 }
 
 
+
+/**
+ * @brief check cache content
+ *
+ * @param cache LRU_cache pointer
+ */
 void cacheCheck(LRU_cache* cache)
 {
     mylist_head* p;
@@ -249,7 +258,7 @@ void cacheCheck(LRU_cache* cache)
     mylist_for_each(p, &cache->head)
     {
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
-        printf("  %s\n",entry->domain_name);
+        printf("  %s\n", entry->domain_name);
         printf("  ---------------------------\n");
         printf("  RR. . . . . : %s\n", entry->ip);
         printf("  TYPE. . . . : %d\n", entry->type);
@@ -258,11 +267,10 @@ void cacheCheck(LRU_cache* cache)
         {
             printf("  PREF. . . . : %d\n", entry->addition);
         }
-        printf("\n");
+        unlock(&(cache->lock));
+        printf(BOLDBLUE"  Total Length: %d\n"RESET, cache->length);
+        printf(BOLDGREEN "> check end\n"RESET);
     }
-    unlock(&(cache->lock));
-    printf(BOLDBLUE"  Total Length: %d\n"RESET, cache->length);
-    printf(BOLDGREEN "> check end\n"RESET);
 }
 
 
@@ -318,6 +326,12 @@ int cacheQuery(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
 
 
 
+/**
+ * @brief scanning cache and delete overdue records
+ *
+ * @param cache LRU_cache pointer
+ * @return int is records deleted
+ */
 int cacheScan(LRU_cache* cache)
 {
     writeLock(&(cache->lock));
@@ -358,7 +372,8 @@ int cacheInsert(LRU_cache* cache, DNS_entry* entry)
         int i;
         for(i = 0; i < __CACHE_LEN__; i++)
         {
-            if(cache->set[i] == 0)  break;
+            if(cache->set[i] == 0)
+                break;
         }
         __LRU_list_add(cache, entry, &cache->list[i]);
         mylist_head* head;
@@ -382,8 +397,16 @@ int cacheInsert(LRU_cache* cache, DNS_entry* entry)
 
 
 
+/**
+ * @brief flush cache content
+ *
+ * @param cache LRU_cache pointer
+ * @return int flush result (0:success)
+ */
 int cacheFlush(LRU_cache* cache)
 {
+    if(cache == NULL)   return -1;
+
     writeLock(&(cache->lock));
     for(int i = 0; i < cache->length; i++)
     {
@@ -399,5 +422,4 @@ int cacheFlush(LRU_cache* cache)
     unlock(&(cache->lock));
     consoleLog(DEBUG_L1, BOLDGREEN "> cache flush ok.\n");
     return 0;
-
 }
