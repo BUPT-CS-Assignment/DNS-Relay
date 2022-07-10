@@ -90,7 +90,7 @@ void* debugHandle()
         {
             consoleLog(DEBUG_L0, BOLDRED"> thread num: %d\n", __THREAD__);
         }
-        else if(strcmp(cmd, "cache") == 0)
+        else if(strcmp(cmd, "cache-c") == 0)
         {
             cacheCheck(__URL_CACHE__);
         }
@@ -98,9 +98,13 @@ void* debugHandle()
         {
             cacheFlush(__URL_CACHE__);
         }
-        else if(strncmp(cmd, "scan", 4) == 0 && strlen(cmd) >= 6)
+        else if(strcmp(cmd, "cache-o") == 0)
         {
-            int time = atoi((char*)cmd + 5);
+            cacheOutput(__URL_CACHE__);
+        }
+        else if(strncmp(cmd, "cache-s", 7) == 0 && strlen(cmd) >= 6)
+        {
+            int time = atoi((char*)cmd + 8);
             __CACHE_SCAN_TIME__ = (time > 30 ? time : 30);
             consoleLog(DEBUG_L0, BOLDRED"> cache scan period: %ds\n", __CACHE_SCAN_TIME__);
         }
@@ -117,7 +121,7 @@ void* debugHandle()
         {
             consoleLog(DEBUG_L0, BOLDRED"> command undefined.\n");
         }
-        setbuf(stdin, NULL); 
+        setbuf(stdin, NULL);
     }
 }
 
