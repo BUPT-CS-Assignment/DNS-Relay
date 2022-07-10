@@ -15,6 +15,7 @@ extern int          __CACHE_LEN__;
 extern int          __CACHE_SCAN_TIME__;
 extern LRU_cache*   __URL_CACHE__;
 extern hash         __HOST_HASHMAP__;
+extern int          __HOST_EXIST__;
 
 /*-------------------------------- Global Variables ---------------------------------*/
 
@@ -35,14 +36,6 @@ typedef struct thread_args
 
 
 /*----------------------------------- Functions ------------------------------------*/
-
-
-/* Socket Base */
-int     socketInit(Socket* server, uint32_t address, uint16_t port);
-void    socketClose(Socket*);
-void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
-
-
 /* Server Base */
 void    start(Socket*);
 void*   connectHandle(void* param);

@@ -261,7 +261,7 @@ void cacheCheck(LRU_cache* cache)
         printf("\n");
     }
     unlock(&(cache->lock));
-    printf(BOLDBLUE"Total Length: %d\n"RESET, cache->length);
+    printf(BOLDBLUE"  Total Length: %d\n"RESET, cache->length);
     printf(BOLDGREEN "> check end\n"RESET);
 }
 
@@ -288,7 +288,7 @@ int cacheQuery(LRU_cache* cache, DNS_entry* query, DNS_entry** result)
         DNS_entry* entry = mylist_entry(p, DNS_entry, node);
         if(strcmp(entry->domain_name, query->domain_name) == 0)
         {
-            if(entry->type == query->type)
+            if(entry->timestamp >= time(NULL) && entry->type == query->type)
             {
                 (*result)[count].domain_name = (char*)malloc(strlen(entry->domain_name) + 1);
                 strcpy((*result)[count].domain_name, entry->domain_name);

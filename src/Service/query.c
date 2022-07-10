@@ -124,6 +124,16 @@ int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result, int* resource)
     /* construct dns_entry for query */
     DNS_entry* entry_cache, * entry_host;
     DNS_entry_set(&entry_cache, qname, NULL, 0, qtype, 0);
+    
+    int ret;    //return value
+
+    /* no host file read */
+    if(__HOST_EXIST__ == 0){
+        ret = cacheQuery(__URL_CACHE__,entry_cache,result);
+        consoleLog(DEBUG_L0, BOLDGREEN"> query from cache return %d\n", ret);
+        return ret;
+    }
+
     DNS_entry_set(&entry_host, qname, NULL, 0, qtype, 0);
 
     DNS_entry* res_cache = NULL, * res_host = NULL;     //query result dest from cache/host
@@ -142,7 +152,7 @@ int qnameSearch(char* qname, uint16_t qtype, DNS_entry** result, int* resource)
     thread_t thread_host = threadCreate((void*)host_query_handle, hq_arg);
     ret_cache = cacheQuery(__URL_CACHE__, entry_cache, &res_cache);
 
-    int ret;
+    
     if(ret_cache == 0)
     {
         /* not in cache, wait for query-host thread */

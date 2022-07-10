@@ -52,7 +52,6 @@ int inetParse(int af, void* url_src, char* dest);
 int inetFormat(int af, char* url_src, void* dest);
 
 
-
 /* Basic Socket Struct Contents FD & ADDR */
 typedef struct Socket
 {
@@ -61,7 +60,16 @@ typedef struct Socket
 
 }Socket;
 
-// /* New Thread Create */
+
+/* Socket Base */
+int     platformInit();
+void    sockaddrInit(Socket* server, uint32_t address, uint16_t port);
+int     socketInit(Socket* server, int IPPROTO);
+void    socketClose(Socket*);
+void    setTimeOut(Socket*, uint32_t send_timeout, uint32_t recv_timeout);
+
+
+/* New Thread Base */
 thread_t    threadCreate(void* (*thread_handler)(void*), void* args);
 void        threadExit(size_t sleep_time_ms);
 void        threadDetach(thread_t);

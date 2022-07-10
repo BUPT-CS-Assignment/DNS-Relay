@@ -1,39 +1,64 @@
 #include "console.h"
-#include "server.h"
+#include "main.h"
+
+
+/**
+ * @brief platform socket service init
+ *
+ * @return int
+ */
+int platformInit()
+{
+#ifdef _WIN32
+    WSADATA w;
+    return WSAStartup(MAKEWORD(2, 2), &w);
+#endif
+    return 0;
+}
+
+
+
+/**
+ * @brief Basic sockaddr initialize
+ * 
+ * @param server Socket pointer
+ * @param address inet address
+ * @param port port to bind
+ */
+void sockaddrInit(Socket* server, uint32_t address, uint16_t port)
+{
+    /* Pointer Check */
+    if(server == NULL)  return;
+
+    /* socket base */
+    memset(&server->_addr, 0, sizeof(struct sockaddr_in));
+    server->_addr.sin_addr.s_addr = address;    //Connection Address
+    server->_addr.sin_family = AF_INET;         //IPv4
+    server->_addr.sin_port = htons(port);       //Port
+
+}
 
 
 /**
  * @brief Basic Socket Initialize
  * 
- * @param server    Socket struct pointer 
- * @param address   Socket sockaddr <- address (string)
- * @param port      Socket port
- * @return int      socket() return value
+ * @param server Socket struct pointer
+ * @param IPPROTO socket IPPROTO
+ * @return int socket() return value
  */
-int socketInit(Socket* server,uint32_t address ,uint16_t port)
+int socketInit(Socket* server, int IPPROTO)
 {
     /* Pointer Check */
     if(server == NULL)  return SOCKET_ERROR;
 
-    /* platform initialize special for windows */ 
-#ifdef _WIN32
-    WSADATA w;
-    WSAStartup(MAKEWORD(2, 2), &w);
-#endif 
+    /*  new socket */
+    server->_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO);
 
-    /*  new udp socket */
-    server->_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-    if((int)server->_fd < 0){
+    if((int)server->_fd < 0)
+    {
         consoleLog(DEBUG_L0, RED"socket error");
-        exit(-1);
+        return -1;
     }
-
-    /* socket base */
-    memset(&server->_addr,0,sizeof(struct sockaddr_in));
-    server->_addr.sin_addr.s_addr = address;    //Connection Address
-    server->_addr.sin_family = AF_INET;         //IPv4
-    server->_addr.sin_port = htons(port);       //Port
 
     /* port reuse */
     int temp = 1;
@@ -47,7 +72,7 @@ int socketInit(Socket* server,uint32_t address ,uint16_t port)
 
 /**
  * @brief Close socket
- * 
+ *
  * @param s SOCKET fd
  */
 void socketClose(Socket* s)
@@ -66,7 +91,7 @@ void socketClose(Socket* s)
 
 /**
  * @brief Set Socket TimeOut
- * 
+ *
  * @param s Socket pointer
  * @param send_timeout send()/sendto() timeout
  * @param recv_timeout recv()/recvfrom() timeout

@@ -33,7 +33,7 @@ void consoleParse(int argc, char* argv[])
         {
             strcpy(__LOCAL_DNS_ADDR__, argv[i] + 1);   //local dns server address
         }
-        else if(argv[i][0] == '<' && len >= 2)
+        else if(argv[i][0] == ':' && len >= 2)
         {
             strcpy(__HOST_DEST__, argv[i] + 1);
         }

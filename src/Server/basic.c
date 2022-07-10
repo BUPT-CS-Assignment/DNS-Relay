@@ -11,6 +11,7 @@ char        __HOST_DEST__[255] = "host.txt";
 
 int         __THREAD__ = 0;
 int         __DEBUG__ = 0;
+int         __HOST_EXIST__ = 1;
 int         __CACHE_SCAN_TIME__ = 60;
 
 Socket      __DNS_SERVER__;
@@ -50,6 +51,7 @@ void start(Socket* server)
     if(hostInit(&__HOST_HASHMAP__) != 0)
     {
         consoleLog(DEBUG_L0, RED"> no host file.\n");
+        __HOST_EXIST__ = 0;
     }
 
     consoleLog(DEBUG_L0, BOLDWHITE"> cache service start. cache capacity: %d.\n", __CACHE_LEN__);
