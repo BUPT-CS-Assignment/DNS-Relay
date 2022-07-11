@@ -84,7 +84,7 @@ int hostQuery(DNS_entry* entry, DNS_entry** result, hash* map, int* flag)
             if(flag == 0)   return 0;
 
             DNS_entry* temp = mylist_entry(p, DNS_entry, node);
-            if(strcmp(temp->ip, "0.0.0.0") == 0)
+            if(entry->type == TYPE_A && (strcmp(temp->ip, "0.0.0.0") == 0))
             {
                 return -1;
             }

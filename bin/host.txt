@@ -1,3 +1,9 @@
+0.0.0.0 block.test
+10.110.0.123 multi.test
+11.111.1.123 multi.test
+12.112.2.123 multi.test
+123:456::789:abc v6.test
+
 0.0.0.0 008.cn
 0.0.0.0 2qq.cn
 0.0.0.0 555.265.com
@@ -198,10 +204,7 @@
 0.0.0.0 zbszx.vicp.net
 0.0.0.0 zelnet.ru
 0.0.0.0 zhp.gdynia.pl
-0.0.0.0 test0
-11.111.11.111 test1
-12.222.12.222 test1
-22.22.222.222 test2
+
 202.108.33.89 www.y.com.cn
 61.135.181.175 sohu
 123.127.134.10 www.bupt.cn
